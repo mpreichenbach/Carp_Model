@@ -66,7 +66,6 @@ temperature.data <- function(path="~/Supplementary Files/"){
 }
 
 
-
 treatment.key <- function(trial, pond){
     # this returns the sound treatment type ("Control", "ChirpSquare", "BoatMotor", "ChirpSaw"),
     # given the trial and pond numbers. Note that this function is only valid for the 2018 CERC
@@ -129,6 +128,62 @@ treatment.key <- function(trial, pond){
     }
     
     return(treatment)
+}
+
+
+fit.crw <- function(data_path="~/Carp Pond Analysis/", out_path, sound_data, trials, ponds,
+                    sound_time, seconds_ba, timestep="6 sec", inits=c(2, 0.001, attempts=20)){
+    # this function loads sound and processed telemetry data, and fits correlated random-walks to
+    # the tracks. Instead of returning an object, this function saves .RDATA files to the out_path.
+    
+    for (trial in trials){
+        for (pond in ponds){
+            s.dat <- subset(sound_data, Sound=="ON" & Trial==trial & Pond==pond)
+            s.dat <- s.dat[order(s.dat$locTimes),]
+            treatment <- treatment.key(trial=trial, pond=pond)
+            
+            # for more flexibility, use RDS instead of RDATA in the processing step; RDATA saves the
+            # name of objects too, which must be known in subsequent code.
+            load(paste0('~/Carp Pond Analysis/ProcessData_', trial, '_pond_', pond, '.RDATA'))
+            AllData$Treatment <- treatment
+            
+            #Now subset dataset to just time before and after specified time interval
+            crawldat0 <- subset(AllData, !is.na(Easting))
+            crawldat0$OnDT <- as.POSIXct(Sdat$locTimes[length(Sdat$locTimes)], 
+                                         format="%Y-%m-%d %H:%M:%S")
+            crawldat0 <- subset(crawldat0, DT >= OnDT-1800 & DT <= OnDT+1800)
+
+            # do we need this line?
+            crawldat0 <- crawldat0[,c("ID","Easting","Northing","DT","Trial","Pond","Treatment",
+                                      "Sound")]
+            
+            TagCodes <- unique(crawldat0$ID)
+            
+            rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
+            colnames(rawdat)<-c('ID','x','y','time')
+            
+            #Fit the correlated random walk Model
+            tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
+                                  theta=inits, fixPar=c(NA, NA), attempts=20)
+            
+            # Add date-time column called 'DT'
+            tempDat0$crwPredict$DT <- tempDat0$crwPredict$time
+            
+            # only keep the necessary covariates
+            covDat <- AllData[,c("ID","DT","Trial","Pond","Treatment","Sound")]
+            
+            # merge the CRW data with covariate infor from telemetry
+            tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","DT"))
+            
+            #prepare data for input into movement model and define covariates
+            ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"))
+            
+            #output to directory
+            save(ModDat, file = paste0("FishDat_Trial_", t,"_Pond_", p,".RDATA"))
+            
+            print(paste0("Saved fitted random walk for Trial ", trial, " Pond ", pond, "."))
+        }
+    }
 }
 
 
