@@ -1,1 +1,1 @@
-This repo contains MCMC practice scripts, and scripts for implementing and fitting a movement model.
+This repository contains scripts to process telemetry data, fit correlated random walks, fit hidden Markov models, simulate fish movement, and generate statistical analyses.
