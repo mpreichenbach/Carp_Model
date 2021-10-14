@@ -34,8 +34,7 @@ sound.data <- function(path="~/Supplementary Files/"){
     # loads the dataframe with sound on/off times, pond, and sound type; also processes date/time
     # values to POSIXct format. Returns a dataframe ordered by local times.
     
-    SoundDat <- read.csv('C:/Users/RDGRLMPR/Documents/Carp/Master_Sound_Tag_20200925.csv', 
-                         stringsAsFactors=FALSE)
+    SoundDat <- read.csv(paste0(path, "Master_Sound_Tag_20200925.csv", stringsAsFactors=FALSE))
     
     # remove the following two lines in the future
     TrialNum <- sort(unique(SoundDat$Trial))
@@ -55,5 +54,14 @@ sound.data <- function(path="~/Supplementary Files/"){
  
 
 temperature.data <- function(path="~/Supplementary Files/"){
+    # loads the pond temperature data, converts date/times to POSIXct, and returns a dataframe.
     
+    TData <- read.csv(paste0(path, "2018CERC_WaterTemperature_AllTrialsPonds.csv"), 
+                      stringsAsFactors=F)
+    
+    TData$DT <- as.POSIXct(TData$DateTime,format="%Y-%m-%d %H:%M:%S")
+    TData$DateTime <- NULL
+    
+    return(TData)
 }
+
