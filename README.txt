@@ -1,0 +1,1 @@
+This repo contains MCMC practice scripts, and scripts for implementing and fitting a movement model.

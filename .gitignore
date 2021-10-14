@@ -1,0 +1,10 @@
+/.idea
+/Carp Pond Analysis
+/Data
+/Papers
+/Presentations
+/Supplementary Files
+/Workspaces
+.Rproj.user
+.Rhistory
+Carp-Model.R
