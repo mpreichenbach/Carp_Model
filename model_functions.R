@@ -65,3 +65,90 @@ temperature.data <- function(path="~/Supplementary Files/"){
     return(TData)
 }
 
+
+
+treatment.key <- function(trial, pond){
+    # this returns the sound treatment type ("Control", "ChirpSquare", "BoatMotor", "ChirpSaw"),
+    # given the trial and pond numbers. Note that this function is only valid for the 2018 CERC
+    # trials; it will need to change for any future experimental setup.
+    
+    if (trial == 1) {
+        if (pond == 31) {
+            treatment <- "ChirpSaw"
+        } else if (pond == 30) {
+            treatment <- 'BoatMotor'
+        } else if (pond == 27) {
+            treatment <- 'ChirpSquare'
+        } else if (pond == 26) {
+            treatment <- "Control"
+        }
+    }
+    if (trial == 2) {
+        if (pond == 31) {
+            treatment <- "Control"
+        } else if (pond == 30) {
+            treatment <- "ChirpSaw"
+        } else if (pond == 27) {
+            treatment <- "BoatMotor"
+        } else if (pond == 26) {
+            treatment <- 'ChirpSquare'
+        }
+    }
+    if (trial == 3) {
+        if (pond == 31) {
+            treatment <- 'ChirpSquare'
+        } else if (pond == 30) {
+            treatment <- "Control"
+        } else if (pond == 27) {
+            treatment <- "ChirpSaw"
+        } else if (pond == 26) {
+            treatment <- "BoatMotor"
+        }
+    }
+    if (trial == 4) {
+        if (pond == 31) {
+            treatment <- "BoatMotor"
+        } else if (pond == 30) {
+            treatment <- 'ChirpSquare'
+        } else if (pond == 27) {
+            treatment <- 'Control'
+        } else if (pond == 26) {
+            treatment <- "ChirpSaw"
+        }
+    }
+    if (trial == 5) {
+        if (pond == 31) {
+            treatment <- 'ChirpSquare'
+        } else if (pond == 30) {
+            treatment <- "ChirpSaw"
+        } else if (pond == 27) {
+            treatment <- "BoatMotor"
+        } else if (pond == 26) {
+            treatment <- "Control"
+        }
+    }
+    
+    return(treatment)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
