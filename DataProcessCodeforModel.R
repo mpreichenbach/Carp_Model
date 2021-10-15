@@ -36,86 +36,15 @@ for (TrialNum in TrialNums) {
           system <- 400
       }
       
-      realDat <- read.csv(file=paste0(data_path, "TagHistoryFor_AllTags-Trial", TrialNum, "-System",
-                                      system, ".csv"))
-      
-    # if (TrialNum == 1) {
-    #   if (PondNum == 31) {
-    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System100.csv')
-    #   } else if (PondNum == 30) {
-    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System200.csv')
-    #   } else if (PondNum == 27) {
-    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System300.csv')
-    #   } else if (PondNum == 26) {
-    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System400.csv')
-    #   }
-    # }
-    # if (TrialNum == 2) {
-    #   if (PondNum == 31) {
-    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2-System100.csv')
-    #   } else if (PondNum == 30) {
-    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 27) {
-    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond27_BoatMotor_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 26) {
-    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond26_ChirpSquare_DroppedTagsRemoved.csv')
-    #   }
-    # }
-    # if (TrialNum == 3) {
-    #   if (PondNum == 31) {
-    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 30) {
-    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond30_Control_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 27) {
-    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond27_ChirpSaw_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 26) {
-    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond26_BoatMotor_DroppedTagsRemoved.csv')
-    #   }
-    # }
-    # if (TrialNum == 4) {
-    #   if (PondNum == 31) {
-    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond31_BoatMotor_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 30) {
-    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond30_ChirpSquare_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 27) {
-    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond27_Control_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 26) {
-    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond26_ChirpSaw_DroppedTagsRemoved.csv')
-    #   }
-    # }
-    # if (TrialNum == 5) {
-    #   if (PondNum == 31) {
-    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 30) {
-    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 27) {
-    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond27_BoatMotor_DroppedTagsRemoved.csv')
-    #   } else if (PondNum == 26) {
-    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond26_Control_DroppedTagsRemoved.csv')
-    #   }
-    # }
-    #-------------------------------------------------------------------------------------
-    #read in the detection data
-    # realDat <- read.csv(filename, stringsAsFactors=F)
-    realDat$X <- NULL #Beware some data sets have an extra column
+    realDat <- read.csv(file=paste0(data_path, "TagHistoryFor_AllTags-Trial", TrialNum, "-System",
+                                      system, ".csv"), stringsAsFactors=F)
+    
+    # some datasets have an extra column "X"  
+    realDat$X <- NULL
 
     TagCodes <- unique(realDat$TagCode)
-    
-    realDat<-realDat[realDat$Easting!=0,]
-    
+    realDat <- realDat[realDat$Easting!=0,]
     realDat <- realDat[order(realDat$TagCode, realDat$LocalTime),]
-    
-    #-------------------------------------------------------------------------------------
-    #Read in the Pond and attribute location data
-    # LocsDat <- read.csv(paste0(getwd(),"/CERC2018Positions.csv")) #AEH_18_CERCSOUND_01_GPS
-    # LocsDat <- subset(LocsDat, Pond==PondNum)
-    # names(LocsDat)[c(1, 2)] <- c("x", "y")
-    # 
-    # SPK <- subset(LocsDat, Type=='SPK')
-    # KET <- subset(LocsDat, Type=='KET')
-    # BND <- subset(LocsDat, Type=='BND')
-    # HYD <- subset(LocsDat, Type=='HYD')
-    
     
     FishDT <- as.data.frame(matrix(NA, nrow=length(TagCodes), ncol=2), stringsAsFactors=F)
     colnames(FishDT) <- c("minDT", "maxDT")
@@ -147,8 +76,10 @@ for (TrialNum in TrialNums) {
       TempDat$ID <- TagCodes[i]
       TempDat$TagCode <- NULL
       
-      FishDT[i,1] <- minDT #minimum date time for the fish
-      FishDT[i,2] <- maxDT #maximum date time for the fish
+      # minimum datetime for the fish
+      FishDT[i,1] <- minDT
+      # maximum datetime for the fish
+      FishDT[i,2] <- maxDT
       FishN[i,1] <- nrow(TempDat)
       
       if (i==1) {
@@ -167,14 +98,12 @@ for (TrialNum in TrialNums) {
     minDT0 <- min(FishDT[,1])
     maxDT0 <- max(FishDT[,2])
     #-------------------------------------------------------------------------------------
-    #Read in the Sound on off time data hard wired to trial 1 folder
+    #Read in the Sound on/off times
     SoundDat <- read.csv("~/Carp-Model/Supplementary Files/Master_Sound_Tag_20200925.csv", 
                          stringsAsFactors=FALSE)
-    # Matt added the following two lines 8/3/2021
     colnames(SoundDat)[1] <- 'Trial'
     SoundDat$DT <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
     SoundDat$locTimes <- as.POSIXct(SoundDat$DT, format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
-    # Matt added the following line on 8/3/2021
     SoundDat <- SoundDat %>% relocate(locTimes, .after = 'Pond')
     SoundDat$DT <- NULL
     SoundDat$Sound[SoundDat$Sound=="ON "] <- "ON"
@@ -184,21 +113,21 @@ for (TrialNum in TrialNums) {
     Offdat <- subset(SoundDat, Sound=="OFF")
     Offdat$Sound  <- NULL
     colnames(Offdat) <- c("Trial", "Pond", "OffDT")
-    # Matt added the following line on 8/3/2021
     Offdat <- Offdat[, 1:3]
     
     Ondat <- subset(SoundDat, Sound=="ON")
     Ondat$Sound  <- NULL
     colnames(Ondat) <- c("Trial", "Pond", "OnDT")
-    # Matt added the following line on 8/3/2021
     Ondat <- Ondat[, 1:3]
     
     Sdat <- cbind(Ondat, Offdat[,-c(1:2)])
     colnames(Sdat) <- c("Trial", "Pond", "OnDT", "OffDT")
     
     stemp <- Sdat[1,]
-    stemp$OffDT <- as.POSIXct("06/01/2018 00:00:00",format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
-    stemp$OnDT <- as.POSIXct("06/01/2018 00:00:00",format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
+    stemp$OffDT <- as.POSIXct("06/01/2018 00:00:00",format="%m/%d/%Y %H:%M:%S", 
+                              tz = "America/Chicago")
+    stemp$OnDT <- as.POSIXct("06/01/2018 00:00:00",format="%m/%d/%Y %H:%M:%S", 
+                             tz = "America/Chicago")
     
     Sdat <- rbind(stemp, Sdat)
     
@@ -224,12 +153,10 @@ for (TrialNum in TrialNums) {
     Dates$Sound[is.na(Dates$Sound)]  <- 0
     Dates$Sindex[is.na(Dates$Sindex)]  <- offcounter[j]
     
-    # table(Dates$Sound, Dates$Sindex, useNA = "ifany")
-    # tail(Dates)
     #-------------------------------------------------------------------------------------
-    #Obtain sunrise times
-    #Here's the function - sunrise.set(lat, long, date, timezone = "UTC", num.days = 1)
-    #using the location of Pond 26
+    # Obtain sunrise times
+    # Here's the function: sunrise.set(lat, long, date, timezone = "UTC", num.days = 1)
+    # Using the location of Pond 26
     SunRS <- sunrise.set(38.9122061924, -92.2795993947,
                          paste0(year(min(AllData0$DT)), '/', month(min(AllData0$DT)), '/', 
                                 day(min(AllData0$DT))-1), num.days = 8, 
@@ -238,12 +165,13 @@ for (TrialNum in TrialNums) {
     SunRS[,2] <- as.POSIXct(SunRS[,2], origin="1970-01-01", tz = "America/Chicago")
     SunRS$Date <- as.Date(SunRS[,1])
     
+    # Day is 0, night is 1
     for(j in 1:(nrow(SunRS)-1)){
       Dates$Diel[(Dates$DT >= SunRS$sunrise[j]) & (Dates$DT < SunRS$sunset[j])] <- 0
     }
     Dates$Diel[is.na(Dates$Diel)] <- 1
     
-    #and merge the environmental conditons
+    # Merge the environmental conditons
     for(k in unique(AllData0$ID)) {
       
       AllData1 <- subset(AllData0, ID==k)
