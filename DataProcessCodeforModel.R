@@ -251,19 +251,18 @@ for (TrialNum in TrialNums) {
       }
     } 
     
-    # Matt commented out the following block (to AllData$indx <- Null) because all bad tags have been removed already
-    # #read in the tags and datetimes to remove
-    # ToRemv <-  read.csv('D:/Carp Pond Analysis/FTP/withDropTags/TagsToRemoveForJohn.csv', stringsAsFactors=F)
-    # ToRemv$DroppedDT <- as.POSIXct(ToRemv$DroppedDT, format="%m/%d/%Y %H:%M:%S", digits=3, tz = "America/Chicago")
-    # #ToRemv <- subset(ToRemv, Trial==TrialNum & Pond==PondNum)
-    # ToRemv <- ToRemv[,c(1,2,11,12)]
-    #
-    # AllData$indx <- 0
-    #   for (g in 1:nrow(ToRemv)){
-    #    AllData$indx[AllData$ID == ToRemv$TagCode[g] & AllData$DT > ToRemv$DroppedDT[g]] <- 1
-    #   }
-    # AllData <- subset(AllData, indx==0)
-    # AllData$indx <- NULL
+    #read in the tags and datetimes to remove
+    ToRemv <-  read.csv('D:/Carp Pond Analysis/FTP/withDropTags/TagsToRemoveForJohn.csv', stringsAsFactors=F)
+    ToRemv$DroppedDT <- as.POSIXct(ToRemv$DroppedDT, format="%m/%d/%Y %H:%M:%S", digits=3, tz = "America/Chicago")
+    ToRemv <- subset(ToRemv, Trial==TrialNum & Pond==PondNum)
+    ToRemv <- ToRemv[,c(1,2,11,12)]
+
+    AllData$indx <- 0
+      for (g in 1:nrow(ToRemv)){
+       AllData$indx[AllData$ID == ToRemv$TagCode[g] & AllData$DT > ToRemv$DroppedDT[g]] <- 1
+      }
+    AllData <- subset(AllData, indx==0)
+    AllData$indx <- NULL
 
     #-------------------------------------------------------------------------------------
     ###################### Export the processed data from above #########################

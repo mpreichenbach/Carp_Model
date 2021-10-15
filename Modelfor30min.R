@@ -12,11 +12,9 @@ library(rgdal)
 library(maps)
 library(momentuHMM)
 
-# Matt added this line 8/3/2021
-usgs.path <- 'C:/Users/RDGRLMPR/Documents/Carp_Model/USGS'
-
+setwd("~/Carp-Model/")
 #Map to the animation directory
-LocsDat <- read.csv(paste0(usgs.path, "/Supplementary Files", "/CERC2018Positions.csv")) #AEH_18_CERCSOUND_01_GPS
+LocsDat <- read.csv(paste0("Supplementary Files/", "CERC2018Positions.csv"))
 names(LocsDat)[c(1, 2)] <- c("x", "y")
 
 SPK <- subset(LocsDat, Type=='SPK')
@@ -31,15 +29,10 @@ HYD <- subset(LocsDat, Type=='HYD')
 # Bnd[2,2] <- range(BND$y)[2]
 # colnames(Bnd)<- c("x","y")i.options(outdir = getwd(), convert = 'C:/Program Files/ImageMagick-7.1.0-Q16-HDRI/convert.exe')
 
-#Set working directory
-setwd(paste0(usgs.path, "/Carp Pond Analysis"))
-
-#read in the pond position data
-
 
 #--------------------------------------------------------------------------------
 #Sound data
-SoundDat <- read.csv('C:/Users/RDGRLMPR/Documents/Carp/Master_Sound_Tag_20200925.csv', stringsAsFactors=FALSE)
+SoundDat <- read.csv("Supplementary Files/Master_Sound_Tag_20200925.csv", stringsAsFactors=FALSE)
 TrialNum <- sort(unique(SoundDat$Trial))
 PondNum <- sort(unique(SoundDat$Pond))# Matt added the following two lines 8/3/2021
 colnames(SoundDat)[1] <- 'Trial'
@@ -52,12 +45,13 @@ SoundDat$Sound[SoundDat$Sound=="ON "] <- "ON"
 SoundDat <- SoundDat[order(SoundDat$locTimes),]
 #----------------------------------------------------------------------------------
 #Water temperature data
-TData <- read.csv(paste0(usgs.path, "/Supplementary Files/2018CERC_WaterTemperature_AllTrialsPonds.csv"), stringsAsFactors=F)
+TData <- read.csv(paste0("Supplementary Files/2018CERC_WaterTemperature_AllTrialsPonds.csv"), 
+                  stringsAsFactors=F)
 TData$DT <- as.POSIXct(TData$DateTime,format="%Y-%m-%d %H:%M:%S")
 TData$DateTime <- NULL
 
-# TrialNum <- c(1, 2, 3, 4, 5)
-# PondNum <- c(26, 27, 30, 31)
+TrialNum <- c(1, 2, 3, 4, 5)
+PondNum <- c(26, 27, 30, 31)
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -214,7 +208,7 @@ for (t in TrialNum) {
     # change the time frame below to include more or less data (1800 = 60 secs/min * 30 min)
     tdat0 <- subset(tdat, DT >= OnDT-1800 & DT <= OnDT+1800) 
     
-    ##### unknown, perhaps take the mean time for the day?
+    # averages the times given in a particular trial and pond
     MuT <- ddply(tdat0, .(Trial, Pond),
                 summarize,
                 TempC = mean(Temp_C, na.rm=T))

@@ -187,6 +187,79 @@ fit.crw <- function(data_path="~/Carp Pond Analysis/", out_path, sound_data, tri
 }
 
 
+compile.crw <- function(path="~/Carp Pond Analysis/", sound_data, temperature_data, pond_locations, 
+                        sound_time, trials, ponds, seconds_ba){
+    # this function loads the various saved random-walk outputs and compiles them into one dataframe
+    # per trial.
+    
+    # Read in all correlated random walk outputs files 
+    IDs <- matrix(NA, nrow=length(trials) * length(ponds), ncol=14)
+    count<-0
+    for (trial in trials) {
+        for (pond in ponds) {
+            speaker <- subset(pond_locations$SPK, pond_locations$SPK$Pond==p)
+            
+            # load the fitted CRW file
+            load(paste0("FishDat_Trial_",t,"_Pond_",p,".RDATA"))
+            # get only sound-on times for the particular trial and pond
+            sdat <- subset(sound_data, Sound=="ON" & Trial==t & Pond==p)
+            # order from oldest to newest
+            sdat <- sdat[order(sdat$locTimes),]
+            
+            # gets the relevant temperature data
+            tdat <- subset(TData, Trial==trial & Pond==pond)
+            
+            # order from oldest to newest
+            tdat <- tdat[order(tdat$DT),]
+            
+            # change the time frame below to include more or less data (1800 = 60 secs/min * 30 min)
+            tdat0 <- subset(tdat, DT >= sound_time-seconds_ba & DT <= sound_time+seconds_ba) 
+            
+            # averages the temperatures in a given trial and pond
+            MuT <- ddply(tdat0, .(Trial, Pond),
+                         summarize,
+                         TempC = mean(Temp_C, na.rm=T))
+            
+            # Label loaded model data with correct sound on/off info
+            ModDat$Sound[ModDat$DT<sound_time] <- "0ff"
+            ModDat$Sound[ModDat$DT>=sound_time] <- "On"
+            
+            # compute distance to speaker
+            ModDat$Dist2SPK <- sqrt((speaker$x - ModDat$x)^2 + 
+                                        (speaker$y - ModDat$y)^2)
+            
+            # incorporate temperature
+            ModDat$TempC <- MuT$TempC
+            
+            # just makes a new copy?
+            ModDat0 <- ModDat 
+            
+            # iteratively fill a dataframe with trial/pond tag
+            count<-count+1
+            IDs[count,1] <- trial
+            IDs[count,2] <- pond
+            IDs[count,3:(2+length(unique(ModDat0$ID)))] <- 
+                as.numeric(as.character(unique(ModDat0$ID)))[1:length(unique(ModDat0$ID))]
+            
+            #just keeps track of codes progress
+            print(paste0("Trial_",t,"Pond_",p,"Nfish_", length(unique(ModDat0$ID))))
+            
+            #Compile all one-hour tracks into one data set for model fitting
+            if (pond==Ponds[1]) { 
+                FishData0 <- ModDat0
+            }else{
+                FishData0 <- rbind(FishData0, ModDat0)  
+            }
+        }   
+        if (t==TrialNum[1]) { 
+            FishData <- FishData0
+        }else{
+            FishData <- rbind(FishData, FishData0)  
+        }
+    }
+    
+    return(list(FishData=FishData, IDs=IDs))
+}
 
 
 
