@@ -12,83 +12,91 @@ library(dplyr)
 library(plyr)
 
 # Matt added the following code
-data.path <- 'C:/Users/RDGRLMPR/Documents/Carp/Aggregated Data'
-usgs.path <- 'C:/Users/RDGRLMPR/Documents/Carp_Model/USGS'
+data_path <- "~/Carp Telemetry/Telemetry Data/withDropTags/"
 
 #Set working directory
-setwd(paste0(usgs.path, '/Carp Pond Analysis'))
+setwd("~/Carp-Model/Carp Pond Analysis/")
 #Please specify the trial, pond number, and scenario
 TrialNums <- c(1, 2, 3, 4, 5)
 PondNums <- c(26, 27, 30, 31)
 
 #-------------------------------------------------------------------------------------
-rm(realDat)
 for (TrialNum in TrialNums) {
   for (PondNum in PondNums) {
-    print(paste0('Working on Trial ', TrialNum, ' and Pond ', PondNum, '.'))
+    print(paste0("Working on Trial ", TrialNum, " and Pond ", PondNum, "."))
     #assign file names by Trial
     
-     # TrialNum <- 3
-     # PondNum <- 27
-    
-    if (TrialNum == 1) {
-      if (PondNum == 31) {
-        filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System100_Pond31_ChirpSaw.csv')
-      } else if (PondNum == 30) {
-        filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System200_Pond30_BoatMotor.csv')
-      } else if (PondNum == 27) {
-        filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System300_Pond27_ChirpSquare.csv')
-      } else if (PondNum == 26) {
-        filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System400_Pond26_Control.csv')
+      if (PondNum == 31){
+          system <- 100
+      }else if (PondNum ==30){
+          system <- 200
+      }else if (PondNum == 27){
+          system <- 300
+      }else if (PondNum == 26){
+          system <- 400
       }
-    }
-    if (TrialNum == 2) {
-      if (PondNum == 31) {
-        filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond31_Control_DroppedTagsRemoved.csv')
-      } else if (PondNum == 30) {
-        filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
-      } else if (PondNum == 27) {
-        filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond27_BoatMotor_DroppedTagsRemoved.csv')
-      } else if (PondNum == 26) {
-        filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond26_ChirpSquare_DroppedTagsRemoved.csv')
-      }
-    }
-    if (TrialNum == 3) {
-      if (PondNum == 31) {
-        filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
-      } else if (PondNum == 30) {
-        filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond30_Control_DroppedTagsRemoved.csv')
-      } else if (PondNum == 27) {
-        filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond27_ChirpSaw_DroppedTagsRemoved.csv')
-      } else if (PondNum == 26) {
-        filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond26_BoatMotor_DroppedTagsRemoved.csv')
-      }
-    }
-    if (TrialNum == 4) {
-      if (PondNum == 31) {
-        filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond31_BoatMotor_DroppedTagsRemoved.csv')
-      } else if (PondNum == 30) {
-        filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond30_ChirpSquare_DroppedTagsRemoved.csv')
-      } else if (PondNum == 27) {
-        filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond27_Control_DroppedTagsRemoved.csv')
-      } else if (PondNum == 26) {
-        filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond26_ChirpSaw_DroppedTagsRemoved.csv')
-      }
-    }
-    if (TrialNum == 5) {
-      if (PondNum == 31) {
-        filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
-      } else if (PondNum == 30) {
-        filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
-      } else if (PondNum == 27) {
-        filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond27_BoatMotor_DroppedTagsRemoved.csv')
-      } else if (PondNum == 26) {
-        filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond26_Control_DroppedTagsRemoved.csv')
-      }
-    }
+      
+      realDat <- read.csv(file=paste0(data_path, "TagHistoryFor_AllTags-Trial", TrialNum, "-System",
+                                      system, ".csv"))
+      
+    # if (TrialNum == 1) {
+    #   if (PondNum == 31) {
+    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System100.csv')
+    #   } else if (PondNum == 30) {
+    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System200.csv')
+    #   } else if (PondNum == 27) {
+    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System300.csv')
+    #   } else if (PondNum == 26) {
+    #     filename <- paste0(data.path, '/Trial1/TagHistoryFor_AllTags-Trial1-System400.csv')
+    #   }
+    # }
+    # if (TrialNum == 2) {
+    #   if (PondNum == 31) {
+    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2-System100.csv')
+    #   } else if (PondNum == 30) {
+    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 27) {
+    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond27_BoatMotor_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 26) {
+    #     filename <- paste0(data.path, '/Trial2/TagHistoryFor_AllTags-Trial2_Pond26_ChirpSquare_DroppedTagsRemoved.csv')
+    #   }
+    # }
+    # if (TrialNum == 3) {
+    #   if (PondNum == 31) {
+    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 30) {
+    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond30_Control_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 27) {
+    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond27_ChirpSaw_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 26) {
+    #     filename <- paste0(data.path, '/Trial3/TagHistoryFor_AllTags-Trial3_Pond26_BoatMotor_DroppedTagsRemoved.csv')
+    #   }
+    # }
+    # if (TrialNum == 4) {
+    #   if (PondNum == 31) {
+    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond31_BoatMotor_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 30) {
+    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond30_ChirpSquare_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 27) {
+    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond27_Control_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 26) {
+    #     filename <- paste0(data.path, '/Trial4/TagHistoryFor_AllTags-Trial4_Pond26_ChirpSaw_DroppedTagsRemoved.csv')
+    #   }
+    # }
+    # if (TrialNum == 5) {
+    #   if (PondNum == 31) {
+    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond31_ChirpSquare_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 30) {
+    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond30_ChirpSaw_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 27) {
+    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond27_BoatMotor_DroppedTagsRemoved.csv')
+    #   } else if (PondNum == 26) {
+    #     filename <- paste0(data.path, '/Trial5/TagHistoryFor_AllTags-Trial5_Pond26_Control_DroppedTagsRemoved.csv')
+    #   }
+    # }
     #-------------------------------------------------------------------------------------
     #read in the detection data
-    realDat <- read.csv(filename, stringsAsFactors=F)
+    # realDat <- read.csv(filename, stringsAsFactors=F)
     realDat$X <- NULL #Beware some data sets have an extra column
 
     TagCodes <- unique(realDat$TagCode)
@@ -160,7 +168,8 @@ for (TrialNum in TrialNums) {
     maxDT0 <- max(FishDT[,2])
     #-------------------------------------------------------------------------------------
     #Read in the Sound on off time data hard wired to trial 1 folder
-    SoundDat <- read.csv(paste0(data.path, '/Master_Sound_Tag_20200925.csv'), stringsAsFactors=FALSE)
+    SoundDat <- read.csv("~/Carp-Model/Supplementary Files/Master_Sound_Tag_20200925.csv", 
+                         stringsAsFactors=FALSE)
     # Matt added the following two lines 8/3/2021
     colnames(SoundDat)[1] <- 'Trial'
     SoundDat$DT <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
@@ -221,8 +230,10 @@ for (TrialNum in TrialNums) {
     #Obtain sunrise times
     #Here's the function - sunrise.set(lat, long, date, timezone = "UTC", num.days = 1)
     #using the location of Pond 26
-    SunRS <- sunrise.set(38.9122061924, -92.2795993947, paste0(year(min(AllData0$DT)),'/',month(min(AllData0$DT)),'/',day(min(AllData0$DT))-1), 
-                         num.days = 8, timezone='America/North_Dakota/Center')
+    SunRS <- sunrise.set(38.9122061924, -92.2795993947,
+                         paste0(year(min(AllData0$DT)), '/', month(min(AllData0$DT)), '/', 
+                                day(min(AllData0$DT))-1), num.days = 8, 
+                                timezone='America/North_Dakota/Center')
     SunRS[,1] <- as.POSIXct(SunRS[,1], origin="1970-01-01", tz = "America/Chicago")
     SunRS[,2] <- as.POSIXct(SunRS[,2], origin="1970-01-01", tz = "America/Chicago")
     SunRS$Date <- as.Date(SunRS[,1])
@@ -252,7 +263,7 @@ for (TrialNum in TrialNums) {
     } 
     
     #read in the tags and datetimes to remove
-    ToRemv <-  read.csv('D:/Carp Pond Analysis/FTP/withDropTags/TagsToRemoveForJohn.csv', stringsAsFactors=F)
+    ToRemv <-  read.csv('~/Carp Model/Supplementary Files/TagsToRemoveForJohn.csv', stringsAsFactors=F)
     ToRemv$DroppedDT <- as.POSIXct(ToRemv$DroppedDT, format="%m/%d/%Y %H:%M:%S", digits=3, tz = "America/Chicago")
     ToRemv <- subset(ToRemv, Trial==TrialNum & Pond==PondNum)
     ToRemv <- ToRemv[,c(1,2,11,12)]
@@ -264,42 +275,6 @@ for (TrialNum in TrialNums) {
     AllData <- subset(AllData, indx==0)
     AllData$indx <- NULL
 
-    #-------------------------------------------------------------------------------------
-    ###################### Export the processed data from above #########################
-    #-------------------------------------------------------------------------------------
-    # save the output data to the directory
     save(AllData, file = paste0('ProcessData_',TrialNum,'_pond_',PondNum,'.RDATA'))
-    #####################################################################################
-    #subset to the time interval currently used
-    # if (TrialNum==1) UseDat <- subset(AllData, DT >= as.POSIXct("2018-06-10 06:00:00") & DT <= as.POSIXct("2018-06-13 06:00:00"))
-    # if (TrialNum==2) UseDat <- subset(AllData, DT >= as.POSIXct("2018-06-25 06:00:00") & DT <= as.POSIXct("2018-06-28 06:00:00"))
-    # if (TrialNum==3) UseDat <- subset(AllData, DT >= as.POSIXct("2018-07-09 06:00:00") & DT <= as.POSIXct("2018-07-12 06:00:00"))
-    # if (TrialNum==4) UseDat <- subset(AllData, DT >= as.POSIXct("2018-07-23 06:00:00") & DT <= as.POSIXct("2018-07-26 06:00:00"))
-    # if (TrialNum==5) UseDat <- subset(AllData, DT >= as.POSIXct("2018-08-06 06:00:00") & DT <= as.POSIXct("2018-08-09 06:00:00"))
-    # 
-    # runStats <- matrix(NA, ncol=3, nrow=1)
-    # runStats[,1] = TrialNum
-    # runStats[,2]= PondNum
-    # runStats[,3] = length(unique(UseDat$ID))
-    # colnames(runStats) <- c("Trial", "Pond", "NFish")
-    #   
-    # print(paste0("Used fish Trial ", TrialNum, "; Pond ", PondNum, "; Nfish ", length(unique(UseDat$ID))))
-    # print(paste0("Entire data set Trial ", TrialNum, "; Pond ", PondNum, "; Nfish ", length(unique(AllData$ID))))
-    # 
-    #  rm(realDat)
-    #  rm(AllData)
-    #  rm(AllData0)
-    #  rm(AllData1)
-    #  rm(UseDat)
-    #  
-    #Compile fish stats
-      # if (TrialNum==TrialNums[1] & PondNum==PondNums[1]) {
-      #   StatRun <- runStats
-      # }else{
-      #   StatRun <- rbind(StatRun, runStats)   
-      # }
   }
 }
-
-#write.table(StatRun, paste0(getwd(),"/IncludedTags.csv"), sep=",", col.names=TRUE, row.names=FALSE, quote=FALSE, na="NA")
-
