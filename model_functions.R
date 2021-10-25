@@ -12,7 +12,7 @@ library(maps)
 library(momentuHMM)
 
 
-pond.locations <- function(path="~/Supplementary Files/"){
+pond.locations <- function(path="~/Carp-Model/Supplementary Files/"){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along
     # with the boundaries of each pond. Returns a list of dataframes, one for each
     # type of object.
@@ -30,11 +30,11 @@ pond.locations <- function(path="~/Supplementary Files/"){
 }
 
 
-sound.data <- function(path="~/Supplementary Files/"){
+sound.data <- function(path="~/Carp-Model/Supplementary Files/"){
     # loads the dataframe with sound on/off times, pond, and sound type; also processes date/time
     # values to POSIXct format. Returns a dataframe ordered by local times.
     
-    SoundDat <- read.csv(paste0(path, "Master_Sound_Tag_20200925.csv", stringsAsFactors=FALSE))
+    SoundDat <- read.csv(paste0(path, "Master_Sound_Tag_20200925.csv"), stringsAsFactors=FALSE)
     
     # remove the following two lines in the future
     TrialNum <- sort(unique(SoundDat$Trial))
@@ -51,9 +51,9 @@ sound.data <- function(path="~/Supplementary Files/"){
     
     return(SoundDat)
 }
- 
 
-temperature.data <- function(path="~/Supplementary Files/"){
+
+temperature.data <- function(path="~/Carp-Model/Supplementary Files/"){
     # loads the pond temperature data, converts date/times to POSIXct, and returns a dataframe.
     
     TData <- read.csv(paste0(path, "2018CERC_WaterTemperature_AllTrialsPonds.csv"), 
@@ -144,18 +144,17 @@ fit.crw <- function(data_path="~/Carp Pond Analysis/", out_path, sound_data, tri
             
             # for more flexibility, use RDS instead of RDATA in the processing step; RDATA saves the
             # name of objects too, which must be known in subsequent code.
-            load(paste0('~/Carp Pond Analysis/ProcessData_', trial, '_pond_', pond, '.RDATA'))
+            load(paste0('~/Carp-Model/Carp Pond Analysis/ProcessData_Trial_', trial, '_pond_', pond, '.RDATA'))
             AllData$Treatment <- treatment
             
             #Now subset dataset to just time before and after specified time interval
             crawldat0 <- subset(AllData, !is.na(Easting))
-            crawldat0$OnDT <- as.POSIXct(Sdat$locTimes[length(Sdat$locTimes)], 
+            crawldat0$OnDT <- as.POSIXct(s.dat$locTimes[length(s.dat$locTimes)], 
                                          format="%Y-%m-%d %H:%M:%S")
-            crawldat0 <- subset(crawldat0, DT >= OnDT-1800 & DT <= OnDT+1800)
+            crawldat0 <- subset(crawldat0, DT>=sound_time-seconds_ba & DT<=sound_time+seconds_ba)
 
-            # do we need this line?
-            crawldat0 <- crawldat0[,c("ID","Easting","Northing","DT","Trial","Pond","Treatment",
-                                      "Sound")]
+            # do we need this line? 
+            crawldat0 <- crawldat0[,c("ID", "Easting", "Northing", "DT", "Treatment", "Sound")]
             
             TagCodes <- unique(crawldat0$ID)
             
@@ -179,7 +178,7 @@ fit.crw <- function(data_path="~/Carp Pond Analysis/", out_path, sound_data, tri
             ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"))
             
             #output to directory
-            save(ModDat, file = paste0("FishDat_Trial_", t,"_Pond_", p,".RDATA"))
+            save(ModDat, file = paste0(out_path, "FishDat_Trial_", t,"_Pond_", p,".RDATA"))
             
             print(paste0("Saved fitted random walk for Trial ", trial, " Pond ", pond, "."))
         }
@@ -261,22 +260,24 @@ compile.crw <- function(path="~/Carp Pond Analysis/", sound_data, temperature_da
     return(list(FishData=FishData, IDs=IDs))
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ponds <- c(26, 27, 30, 31)
+for (trial in c(1, 2, 3, 4, 5)){
+    dir.create(paste0("~/Carp-Model/Carp Pond Analysis/Correlated Random Walks/Trial ", trial))
+    time_subset <- sound_data[sound_data$Sound == "ON" & sound_data$Trial == trial, ]
+    times <- sort(unique(round_date(time_subset$locTimes, "hour")))
+    for (i in length(times)){
+        sound_time <- times[i]
+        if (length(hour(sound_time)) == 1){
+            folder_hour <- paste0("0", hour(sound_time), "00")
+        }else{
+            folder_hour <- paste0(hour(sound_time), "00")
+        }
+        folder_name <- paste(date(sound_time), folder_hour)
+        path <- paste0("~/Carp-Model/Carp Pond Analysis/Correlated Random Walks/Trial ", trial, "/",
+                       folder_name, "/")
+        dir.create(path)
+        fit.crw(out_path=path, sound_data=sound_data, trials=c(trial), ponds=ponds, 
+                sound_time=sound_time, seconds_ba=1800)
+        print(paste0("Finished fitting CRW's for Trial ", trial, " ", folder_name))
+    }
+}

@@ -191,7 +191,7 @@ for (TrialNum in TrialNums) {
     } 
     
     #read in the tags and datetimes to remove
-    ToRemv <-  read.csv('~/Carp Model/Supplementary Files/TagsToRemoveForJohn.csv', stringsAsFactors=F)
+    ToRemv <-  read.csv('~/Carp-Model/Supplementary Files/TagsToRemoveForJohn.csv', stringsAsFactors=F)
     ToRemv$DroppedDT <- as.POSIXct(ToRemv$DroppedDT, format="%m/%d/%Y %H:%M:%S", digits=3, tz = "America/Chicago")
     ToRemv <- subset(ToRemv, Trial==TrialNum & Pond==PondNum)
     ToRemv <- ToRemv[,c(1,2,11,12)]
@@ -203,6 +203,6 @@ for (TrialNum in TrialNums) {
     AllData <- subset(AllData, indx==0)
     AllData$indx <- NULL
 
-    save(AllData, file = paste0('ProcessData_',TrialNum,'_pond_',PondNum,'.RDATA'))
+    save(AllData, file = paste0('ProcessData_Trial_',TrialNum,'_pond_',PondNum,'.RDATA'))
   }
 }

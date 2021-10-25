@@ -71,7 +71,7 @@ for (t in TrialNum) {
     Sdat <- Sdat[order(Sdat$locTimes),]
     
     #Load the processed data
-    load(paste0(usgs.path, '/Carp Pond Analysis/ProcessData_', t, '_pond_', p, '.RDATA'))
+    load(paste0(usgs.path, '/Carp Pond Analysis/ProcessData_Trial_', t, '_pond_', p, '.RDATA'))
     
     AllData$Trial <- t
     AllData$Pond <- p
