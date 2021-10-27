@@ -147,7 +147,11 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
         s.DT <- unique(round_date(s.dat$locTimes, "30 mins"))
         for (i in 1:length(s.DT)){
             sound_time <- s.DT[i]
-            sound_time_str <- str_replace_all(as.character(sound_time), ":", "_")
+            if (hour(sound_time) == 0 & minute(sound_time) == 0){
+                sound_time_str <-paste(as.character(sound_time), "00_00_00")
+            }else{
+                sound_time_str <- str_replace_all(as.character(sound_time), ":", "_")
+            }
             
             # if sound time folder hasn't been created, then create it
             time_dirs <- list.dirs(file.path(out_path, paste("Trial", trial)), recursive=FALSE)
