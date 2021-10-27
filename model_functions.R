@@ -153,9 +153,6 @@ fit.crw <- function(data_path="~/Carp Pond Analysis/", out_path, sound_data, tri
                                          format="%Y-%m-%d %H:%M:%S")
             crawldat0 <- subset(crawldat0, DT>=sound_time-seconds_ba & DT<=sound_time+seconds_ba)
 
-            # do we need this line? 
-            crawldat0 <- crawldat0[,c("ID", "Easting", "Northing", "DT", "Treatment", "Sound")]
-            
             TagCodes <- unique(crawldat0$ID)
             
             rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
