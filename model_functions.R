@@ -131,7 +131,7 @@ treatment.key <- function(trial, pond){
 
 
 fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001), 
-                    attempts=100, data_path=file.path(getwd(), "Carp Pond Analysis"),
+                    attempts=1000, data_path=file.path(getwd(), "Carp Pond Analysis"),
                     out_path=file.path(getwd(), "Fitted CRWs")){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks. Instead of returning an object, this function saves .RDATA files to the out_path.
@@ -145,6 +145,7 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
         # get sound times (rounded to nearest 30 mins) for trial
         s.dat <- subset(sound_data, Trial==trial & Sound=="ON")
         s.DT <- unique(round_date(s.dat$locTimes, "30 mins"))
+        print(s.DT)
         for (i in 1:length(s.DT)){
             sound_time <- s.DT[i]
             if (hour(sound_time) == 0 & minute(sound_time) == 0){
@@ -204,6 +205,37 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
                 print(paste0("Saved fitted random walk for Trial ", trial, 
                              ", Pond ", pond, ", Sound-on time ", sound_time_str, "."))
             }
+        }
+    }
+}
+
+
+compile.crws <- function(crw_dir, date, hours, minutes, 
+                         trials = c(1, 2, 3, 4, 5), ponds=c(26, 27, 30, 31)){
+    # this function compiles the CRWs for the given ponds over all trials, at the given date/time.
+    
+    # ensure hours has the correct format
+    if (length(hours) == 1){
+        hours_str <- paste(0, hours)
+    }else{
+        hours_str <- hours
+    }
+    
+    # ensure minutes has the correct format
+    if (length(minutes) == 1){
+        minutes_str <- paste(0, minutes)
+    }else{
+        minutes_str <- minutes
+    }
+
+    dt_str <- paste(date, paste(hours_str, "_", minutes_str, "_", "00", sep=""))
+    holder_df <- NULL
+
+    for (trial in trials){
+        trial_str <- paste("Trial", trial)
+        dt_dir <- file.path(crw_dir, trial_dir, dt_str)
+        for (pond in ponds){
+            
         }
     }
 }
