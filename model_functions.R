@@ -145,7 +145,6 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
         # get sound times (rounded to nearest 30 mins) for trial
         s.dat <- subset(sound_data, Trial==trial & Sound=="ON")
         s.DT <- unique(round_date(s.dat$locTimes, "30 mins"))
-        print(s.DT)
         for (i in 1:length(s.DT)){
             sound_time <- s.DT[i]
             if (hour(sound_time) == 0 & minute(sound_time) == 0){
@@ -235,7 +234,10 @@ compile.crws <- function(crw_dir, date, hours, minutes,
         trial_str <- paste("Trial", trial)
         dt_dir <- file.path(crw_dir, trial_dir, dt_str)
         for (pond in ponds){
-            
+            file_name <- paste("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", dt_str)
+            df <- open(file.path(dt_dir, file_name))
+            df$Trial <- trial
+            df$Pond <- pond
         }
     }
 }
