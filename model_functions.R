@@ -198,11 +198,15 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
                 ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"))
                 
                 #output to directory
-                file_name <- paste0("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", sound_time_str, ".RDATA")
-                save(ModDat, file=file.path(out_path, paste("Trial", trial), sound_time_str, file_name))
-                
-                print(paste0("Saved fitted random walk for Trial ", trial, 
-                             ", Pond ", pond, ", Sound-on time ", sound_time_str, "."))
+                if (out_path){
+                    file_name <- paste0("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", sound_time_str, ".RDATA")
+                    save(ModDat, file=file.path(out_path, paste("Trial", trial), sound_time_str, file_name))
+                    
+                    print(paste0("Saved fitted random walk for Trial ", trial, 
+                                 ", Pond ", pond, ", Sound-on time ", sound_time_str, ".")) 
+                }
+
+                return(ModDat)
             }
         }
     }
