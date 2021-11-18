@@ -130,9 +130,8 @@ treatment.key <- function(trial, pond){
 }
 
 
-fit.crw <- function(trials, ponds, sound_data, seconds_ba, raster_list, timestep="6 sec", inits=c(2, 0.001), 
-                    attempts=1000, data_path=file.path(getwd(), "Carp Pond Analysis"),
-                    out_path=file.path(getwd(), "Fitted CRWs")){
+fit.crw <- function(sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001),
+                    ncores=detectCores(), retryParallel=TRUE, retryFits=100){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks. Instead of returning an object, this function saves .RDATA files to the out_path.
     
