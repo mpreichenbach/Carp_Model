@@ -130,7 +130,7 @@ treatment.key <- function(trial, pond){
 }
 
 
-fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001), 
+fit.crw <- function(trials, ponds, sound_data, seconds_ba, raster_list, timestep="6 sec", inits=c(2, 0.001), 
                     attempts=1000, data_path=file.path(getwd(), "Carp Pond Analysis"),
                     out_path=file.path(getwd(), "Fitted CRWs")){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
@@ -195,7 +195,8 @@ fit.crw <- function(trials, ponds, sound_data, seconds_ba, timestep="6 sec", ini
                 tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","DT"))
                 
                 #prepare data for input into movement model and define covariates
-                ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"))
+                ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"),
+                                   spatialCovs=raster_list)
                 
                 #output to directory
                 if (out_path){
@@ -245,7 +246,6 @@ compile.crws <- function(crw_dir, date, hours, minutes,
         }
     }
 }
-
 
 # compile.crw <- function(path="~/Carp Pond Analysis/", sound_data, temperature_data, pond_locations, 
 #                         sound_time, trials, ponds, seconds_ba){
