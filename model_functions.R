@@ -6,31 +6,55 @@ library(maps)
 library(momentuHMM)
 library(mvtnorm)
 library(plyr)
+library(raster)
 library(rgdal)
+library(sf)
 library(sp)
 library(StreamMetabolism)
 library(tidyverse)
+library(viridis)
 
 
-fit.krig <- function(sound_data, new_data, resolution=0.01,
-                     crs_string="+proj=utm +zone=15 +ellps=WGS84 +units=m +no_defs"){
+fit.krig <- function(sound_data, new_data, 
+                     crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
-    # Longitude, Latitude, and dB.
+    # x, y, and dB.
     
     sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
-    sf_new_data <- st_as_sf(new_data, coords = c("x", "y"), crs = CRS(crs_string))
+    sp_new_data <- SpatialPoints(new_data, proj4string = CRS(crs_string))
     
     fit_KRIG <- automap::autoKrige(
-        formula = dB ~ 1
+        formula = dB ~ 1,
         input_data = as(sf_sound, "Spatial"),
-        new_data = new_data
+        new_data = sp_new_data
     ) %>%
         .$krige_output %>%
         as.data.frame() %>%
-        dplyr::select(x = x1, y = x2, dB = var1.pred)
-    
+        dplyr::select(x, y, dB = var1.pred)
+
     return(fit_KRIG)
 }
+
+plot.interp <- function(points, title, colours = c("blue", "red", "yellow")){
+    plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
+        geom_raster() +
+        ggtitle(label = "Interpolated dB Values for Pond 26: BoatMotor") +
+        scale_fill_gradientn(colours = c("blue", "red", "yellow")) +
+        theme_bw() +
+        theme(
+            axis.text = element_blank(),
+            axis.title = element_blank(),
+            axis.ticks = element_blank(),
+            panel.border = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_blank(),
+            plot.title = element_text(hjust = 0.5)
+        )
+    
+    return(plt)
+}
+
 
 fit.crw <- function(sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001),
                     ncores=detectCores(), retryParallel=TRUE, retryFits=100){
