@@ -1,30 +1,166 @@
 library(animation)
-library(lubridate)
+library(automap)
 library(circular)
-library(tidyverse)
-library(StreamMetabolism)
-library(mvtnorm)
-library(plyr)
-library(sp)
-library(rgdal)
+library(lubridate)
 library(maps)
 library(momentuHMM)
+library(mvtnorm)
+library(plyr)
+library(rgdal)
+library(sp)
+library(StreamMetabolism)
+library(tidyverse)
 
 
-pond.locations <- function(path=file.path(getwd(), "Supplementary Files")){
+fit.krig <- function(sound_data, new_data, resolution=0.01,
+                     crs_string="+proj=utm +zone=15 +ellps=WGS84 +units=m +no_defs"){
+    # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
+    # Longitude, Latitude, and dB.
+    
+    sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
+    sf_new_data <- st_as_sf(new_data, coords = c("x", "y"), crs = CRS(crs_string))
+    
+    fit_KRIG <- automap::autoKrige(
+        formula = dB ~ 1
+        input_data = as(sf_sound, "Spatial"),
+        new_data = new_data
+    ) %>%
+        .$krige_output %>%
+        as.data.frame() %>%
+        dplyr::select(x = x1, y = x2, dB = var1.pred)
+    
+    return(fit_KRIG)
+}
+
+fit.crw <- function(sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001),
+                    ncores=detectCores(), retryParallel=TRUE, retryFits=100){
+    # this function loads sound and processed telemetry data, and fits correlated random-walks to
+    # the tracks. Instead of returning an object, this function saves .RDATA files to the out_path.
+    
+    for (trial in trials){
+        # if no Trial X folder has been created in out_path, then create it
+        if (!any(grepl(paste("Trial", trial), list.dirs(out_path, recursive=FALSE)))){
+            dir.create(file.path(out_path, paste0("Trial ", trial)))
+        }
+        
+        # get sound times (rounded to nearest 30 mins) for trial
+        s.dat <- subset(sound_data, Trial==trial & Sound=="ON")
+        s.DT <- unique(round_date(s.dat$locTimes, "30 mins"))
+        for (i in 1:length(s.DT)){
+            sound_time <- s.DT[i]
+            if (hour(sound_time) == 0 & minute(sound_time) == 0){
+                sound_time_str <-paste(as.character(sound_time), "00_00_00")
+            }else{
+                sound_time_str <- str_replace_all(as.character(sound_time), ":", "_")
+            }
+            
+            # if sound time folder hasn't been created, then create it
+            time_dirs <- list.dirs(file.path(out_path, paste("Trial", trial)), recursive=FALSE)
+            if (!any(grepl(sound_time_str, time_dirs))){
+                dir.create(file.path(out_path, paste("Trial", trial), sound_time_str))
+            }
+            for (pond in ponds){
+                # store sound treatment for the particular trial and pond
+                treatment <- treatment.key(trial=trial, pond=pond)
+                
+                # for more flexibility, use RDS instead of RDATA in the processing step; RDATA saves the
+                # name of objects too, which must be known in subsequent code.
+                load(file.path(data_path, paste0("ProcessData_Trial_", trial, "_pond_", pond, ".RDATA")))
+                AllData$Trial <- trial
+                AllData$Pond <- pond
+                AllData$Treatment <- treatment
+                
+                #Now subset dataset to just time before and after specified time interval
+                crawldat0 <- subset(AllData, !is.na(Easting))
+                crawldat0$OnDT <- sound_time
+                crawldat0 <- subset(crawldat0, DT>=sound_time-seconds_ba & DT<=sound_time+seconds_ba)
+                
+                TagCodes <- unique(crawldat0$ID)
+                
+                rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
+                colnames(rawdat)<-c('ID','x','y','time')
+                print(paste0("Data subsetting complete for Trial ", trial, ", Pond ", pond, 
+                             ", sound-on time ", sound_time_str, "; fitting CRW."))
+                
+                #Fit the correlated random walk Model
+                tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
+                                      theta=inits, fixPar=c(NA, NA), attempts=attempts)
+                
+                # Add date-time column called 'DT'
+                tempDat0$crwPredict$DT <- tempDat0$crwPredict$time
+                
+                # only keep the necessary covariates
+                covDat <- AllData[,c("ID","DT","Trial","Pond","Treatment","Sound")]
+                
+                # merge the CRW data with covariate info from telemetry
+                tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","DT"))
+                
+                #prepare data for input into movement model and define covariates
+                ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"),
+                                   spatialCovs=raster_list)
+                
+                #output to directory
+                if (out_path){
+                    file_name <- paste0("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", sound_time_str, ".RDATA")
+                    save(ModDat, file=file.path(out_path, paste("Trial", trial), sound_time_str, file_name))
+                    
+                    print(paste0("Saved fitted random walk for Trial ", trial, 
+                                 ", Pond ", pond, ", Sound-on time ", sound_time_str, ".")) 
+                }
+                
+                return(ModDat)
+            }
+        }
+    }
+}
+
+pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along
     # with the boundaries of each pond. Returns a list of data frames, one for each
     # type of object.
+    
+    # bnd_corners_only=FALSE yields a rounded outline of the pond corners (at least with the
+    # CERC 2018 file).
 
-    LocsDat <- read.csv(file.path(path, "CERC2018Positions.csv"))
-    names(LocsDat)[c(1, 2)] <- c("x", "y")
+    LocsDat <- read.csv(file.path(path, "CERC2018Positions.csv"), header=TRUE)
+    colnames(LocsDat)[c(1, 2)] <- c("x", "y")
+
+    SPK <- LocsDat %>%
+        subset(., Type=="SPK") %>%
+        select(x, y, Pond)
+    KET <- LocsDat %>%
+        subset(., Type=="KET") %>%
+        select(x, y, Pond)
+    HYD <- LocsDat %>%
+        subset(., Type=="HYD") %>%
+        select(x, y, Pond)
+    BND <- LocsDat %>%
+        subset(., Type=="BND") %>%
+        select(x, y, Pond)
+
+    rownames(SPK) <- rownames(KET) <- rownames(BND) <- rownames(HYD) <- NULL
+    
+    if (bnd_corners_only){
+        ponds = unique(BND$Pond)
+        df <- data.frame(matrix(ncol = 3, nrow = 0))
+        colnames(df) <- c("x", "y", "Pond")
+        for (i in 1:length(ponds)){
+            pond = ponds[i]
+            bnd_pond <- subset(BND, Pond == pond)
+            
+            x_limits <- c(min(bnd_pond$x), max(bnd_pond$x))
+            y_limits <- c(min(bnd_pond$y), max(bnd_pond$y))
+            df_pond <- expand.grid(x_limits, y_limits)
+            
+            df_pond$Pond <- pond
+            colnames(df_pond) <- c("x", "y", "Pond")
+            df <- rbind(df, df_pond)
+        }
+    }
+    
+    BND <- df
   
-    SPK <- subset(LocsDat, Type=="SPK")
-    KET <- subset(LocsDat, Type=="KET")
-    BND <- subset(LocsDat, Type=="BND")
-    HYD <- subset(LocsDat, Type=="HYD")
-  
-    loc.list = list(speakers=SPK, kettles=KET, boundary=BND, hydrophones=HYD)
+    loc.list = list("speakers"=SPK, "kettles"=KET, "hydrophones"=HYD, "boundary"=BND)
     return(loc.list)
 }
 
@@ -128,216 +264,3 @@ treatment.key <- function(trial, pond){
     
     return(treatment)
 }
-
-
-fit.crw <- function(sound_data, seconds_ba, timestep="6 sec", inits=c(2, 0.001),
-                    ncores=detectCores(), retryParallel=TRUE, retryFits=100){
-    # this function loads sound and processed telemetry data, and fits correlated random-walks to
-    # the tracks. Instead of returning an object, this function saves .RDATA files to the out_path.
-    
-    for (trial in trials){
-        # if no Trial X folder has been created in out_path, then create it
-        if (!any(grepl(paste("Trial", trial), list.dirs(out_path, recursive=FALSE)))){
-            dir.create(file.path(out_path, paste0("Trial ", trial)))
-        }
-        
-        # get sound times (rounded to nearest 30 mins) for trial
-        s.dat <- subset(sound_data, Trial==trial & Sound=="ON")
-        s.DT <- unique(round_date(s.dat$locTimes, "30 mins"))
-        for (i in 1:length(s.DT)){
-            sound_time <- s.DT[i]
-            if (hour(sound_time) == 0 & minute(sound_time) == 0){
-                sound_time_str <-paste(as.character(sound_time), "00_00_00")
-            }else{
-                sound_time_str <- str_replace_all(as.character(sound_time), ":", "_")
-            }
-            
-            # if sound time folder hasn't been created, then create it
-            time_dirs <- list.dirs(file.path(out_path, paste("Trial", trial)), recursive=FALSE)
-            if (!any(grepl(sound_time_str, time_dirs))){
-                dir.create(file.path(out_path, paste("Trial", trial), sound_time_str))
-            }
-            for (pond in ponds){
-                # store sound treatment for the particular trial and pond
-                treatment <- treatment.key(trial=trial, pond=pond)
-                
-                # for more flexibility, use RDS instead of RDATA in the processing step; RDATA saves the
-                # name of objects too, which must be known in subsequent code.
-                load(file.path(data_path, paste0("ProcessData_Trial_", trial, "_pond_", pond, ".RDATA")))
-                AllData$Trial <- trial
-                AllData$Pond <- pond
-                AllData$Treatment <- treatment
-                
-                #Now subset dataset to just time before and after specified time interval
-                crawldat0 <- subset(AllData, !is.na(Easting))
-                crawldat0$OnDT <- sound_time
-                crawldat0 <- subset(crawldat0, DT>=sound_time-seconds_ba & DT<=sound_time+seconds_ba)
-                
-                TagCodes <- unique(crawldat0$ID)
-                
-                rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
-                colnames(rawdat)<-c('ID','x','y','time')
-                print(paste0("Data subsetting complete for Trial ", trial, ", Pond ", pond, 
-                            ", sound-on time ", sound_time_str, "; fitting CRW."))
-                
-                #Fit the correlated random walk Model
-                tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
-                                      theta=inits, fixPar=c(NA, NA), attempts=attempts)
-                
-                # Add date-time column called 'DT'
-                tempDat0$crwPredict$DT <- tempDat0$crwPredict$time
-                
-                # only keep the necessary covariates
-                covDat <- AllData[,c("ID","DT","Trial","Pond","Treatment","Sound")]
-                
-                # merge the CRW data with covariate info from telemetry
-                tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","DT"))
-                
-                #prepare data for input into movement model and define covariates
-                ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound"),
-                                   spatialCovs=raster_list)
-                
-                #output to directory
-                if (out_path){
-                    file_name <- paste0("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", sound_time_str, ".RDATA")
-                    save(ModDat, file=file.path(out_path, paste("Trial", trial), sound_time_str, file_name))
-                    
-                    print(paste0("Saved fitted random walk for Trial ", trial, 
-                                 ", Pond ", pond, ", Sound-on time ", sound_time_str, ".")) 
-                }
-
-                return(ModDat)
-            }
-        }
-    }
-}
-
-
-compile.crws <- function(crw_dir, date, hours, minutes, 
-                         trials = c(1, 2, 3, 4, 5), ponds=c(26, 27, 30, 31)){
-    # this function compiles the CRWs for the given ponds over all trials, at the given date/time.
-    
-    # ensure hours has the correct format
-    if (length(hours) == 1){
-        hours_str <- paste(0, hours)
-    }else{
-        hours_str <- hours
-    }
-    
-    # ensure minutes has the correct format
-    if (length(minutes) == 1){
-        minutes_str <- paste(0, minutes)
-    }else{
-        minutes_str <- minutes
-    }
-
-    dt_str <- paste(date, paste(hours_str, "_", minutes_str, "_", "00", sep=""))
-    holder_df <- NULL
-
-    for (trial in trials){
-        trial_str <- paste("Trial", trial)
-        dt_dir <- file.path(crw_dir, trial_dir, dt_str)
-        for (pond in ponds){
-            file_name <- paste("CRW_Trial_", trial, "_Pond_", pond, "_SoundOn_", dt_str)
-            df <- open(file.path(dt_dir, file_name))
-            df$Trial <- trial
-            df$Pond <- pond
-        }
-    }
-}
-
-# compile.crw <- function(path="~/Carp Pond Analysis/", sound_data, temperature_data, pond_locations, 
-#                         sound_time, trials, ponds, seconds_ba){
-#     # this function loads the various saved random-walk outputs and compiles them into one dataframe
-#     # per trial.
-#     
-#     # Read in all correlated random walk outputs files 
-#     IDs <- matrix(NA, nrow=length(trials) * length(ponds), ncol=14)
-#     count<-0
-#     for (trial in trials) {
-#         for (pond in ponds) {
-#             speaker <- subset(pond_locations$SPK, pond_locations$SPK$Pond==p)
-#             
-#             # load the fitted CRW file
-#             load(paste0("FishDat_Trial_",t,"_Pond_",p,".RDATA"))
-#             # get only sound-on times for the particular trial and pond
-#             sdat <- subset(sound_data, Sound=="ON" & Trial==t & Pond==p)
-#             # order from oldest to newest
-#             sdat <- sdat[order(sdat$locTimes),]
-#             
-#             # gets the relevant temperature data
-#             tdat <- subset(TData, Trial==trial & Pond==pond)
-#             
-#             # order from oldest to newest
-#             tdat <- tdat[order(tdat$DT),]
-#             
-#             # change the time frame below to include more or less data (1800 = 60 secs/min * 30 min)
-#             tdat0 <- subset(tdat, DT >= sound_time-seconds_ba & DT <= sound_time+seconds_ba) 
-#             
-#             # averages the temperatures in a given trial and pond
-#             MuT <- ddply(tdat0, .(Trial, Pond),
-#                          summarize,
-#                          TempC = mean(Temp_C, na.rm=T))
-#             
-#             # Label loaded model data with correct sound on/off info
-#             ModDat$Sound[ModDat$DT<sound_time] <- "0ff"
-#             ModDat$Sound[ModDat$DT>=sound_time] <- "On"
-#             
-#             # compute distance to speaker
-#             ModDat$Dist2SPK <- sqrt((speaker$x - ModDat$x)^2 + 
-#                                         (speaker$y - ModDat$y)^2)
-#             
-#             # incorporate temperature
-#             ModDat$TempC <- MuT$TempC
-#             
-#             # just makes a new copy?
-#             ModDat0 <- ModDat 
-#             
-#             # iteratively fill a dataframe with trial/pond tag
-#             count<-count+1
-#             IDs[count,1] <- trial
-#             IDs[count,2] <- pond
-#             IDs[count,3:(2+length(unique(ModDat0$ID)))] <- 
-#                 as.numeric(as.character(unique(ModDat0$ID)))[1:length(unique(ModDat0$ID))]
-#             
-#             #just keeps track of codes progress
-#             print(paste0("Trial_",t,"Pond_",p,"Nfish_", length(unique(ModDat0$ID))))
-#             
-#             #Compile all one-hour tracks into one data set for model fitting
-#             if (pond==Ponds[1]) { 
-#                 FishData0 <- ModDat0
-#             }else{
-#                 FishData0 <- rbind(FishData0, ModDat0)  
-#             }
-#         }   
-#         if (t==TrialNum[1]) { 
-#             FishData <- FishData0
-#         }else{
-#             FishData <- rbind(FishData, FishData0)  
-#         }
-#     }
-#     
-#     return(list(FishData=FishData, IDs=IDs))
-# }
-# 
-# ponds <- c(26, 27, 30, 31)
-# for (trial in c(1, 2, 3, 4, 5)){
-#     dir.create(paste0("~/Carp-Model/Carp Pond Analysis/Correlated Random Walks/Trial ", trial))
-#     time_subset <- sound_data[sound_data$Sound == "ON" & sound_data$Trial == trial, ]
-#     times <- sort(unique(round_date(time_subset$locTimes, "hour")))
-#     for (i in length(times)){
-#         sound_time <- times[i]
-#         if (length(hour(sound_time)) == 1){
-#             folder_hour <- paste0("0", hour(sound_time), "00")
-#         }else{
-#             folder_hour <- paste0(hour(sound_time), "00")
-#         }
-#         folder_name <- paste(date(sound_time), folder_hour)
-#         path <- paste0("~/Carp-Model/Carp Pond Analysis/Correlated Random Walks/Trial ", trial, "/",
-#                        folder_name, "/")
-#         dir.create(path)
-#         fit.crw(out_path=path, sound_data=sound_data, trials=c(trial), ponds=ponds, 
-#                 sound_time=sound_time, seconds_ba=1800)
-#         print(paste0("Finished fitting CRW's for Trial ", trial, " ", folder_name))
-#     }
-# }
