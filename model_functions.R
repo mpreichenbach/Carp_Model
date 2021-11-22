@@ -10,7 +10,6 @@ library(raster)
 library(rgdal)
 library(sf)
 library(sp)
-library(StreamMetabolism)
 library(tidyverse)
 library(viridis)
 
@@ -35,21 +34,24 @@ fit.krig <- function(sound_data, new_data,
     return(fit_KRIG)
 }
 
-plot.interp <- function(points, title, colours = c("blue", "red", "yellow")){
+plot.interp <- function(points, pond, sound, colours = c("blue", "red", "yellow")){
     plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
         geom_raster() +
-        ggtitle(label = "Interpolated dB Values for Pond 26: BoatMotor") +
-        scale_fill_gradientn(colours = c("blue", "red", "yellow")) +
+        ggtitle(label = paste0(sound, ", Pond ", pond)) +
+        xlab("Easting") +
+        ylab("Northing") +
+        scale_fill_gradientn(colours = colours) +
         theme_bw() +
         theme(
             axis.text = element_blank(),
-            axis.title = element_blank(),
             axis.ticks = element_blank(),
+            plot.title = element_text(size = 18, hjust = 0.5, margin=margin(t = 15)),
+            axis.title.x = element_text(size = 16, margin=margin(b = 15)),
+            axis.title.y = element_text(size = 16, margin=margin(l = 15)),
             panel.border = element_blank(),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             axis.line = element_blank(),
-            plot.title = element_text(hjust = 0.5)
         )
     
     return(plt)
