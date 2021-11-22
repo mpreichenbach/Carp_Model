@@ -291,3 +291,33 @@ treatment.key <- function(trial, pond){
     
     return(treatment)
 }
+
+##### this code will add a column of interpolated dB levels to the fitted CRW files
+# trials <- c(1, 2, 3, 4, 5)
+# for (trial in trials){
+#     files0 <- list.files(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial))
+#     for (i in 1:length(files0)){
+#         file0 <- files0[i]
+#         files1 <- list.files(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0))
+#         for (j in 1:length(files1)){
+#             file1 <- files1[j]
+#             print(file1)
+#             load(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0, "/", file1))
+#             pond <- strtoi(substr(file1, 18, 19))
+#             if (unique(ModDat$Treatment) == "Control"){
+#                 next
+#             }else if (unique(ModDat$Treatment) == "ChirpSaw"){
+#                 sound <- "Saw"
+#             }else if (unique(ModDat$Treatment) == "ChirpSquare"){
+#                 sound <- "Square"
+#             }else if (unique(ModDat$Treatment) == "BoatMotor"){
+#                 sound <- "BoatMotor"
+#             }
+#             sound_data <- read.csv(paste0("~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/Pond", pond, sound, ".csv"))
+#             krig <- fit.krig(sound_data=sound_data, new_data=as.data.frame(ModDat[, c("x", "y")]))
+#             ModDat$dB <- krig$dB
+#             ModDat$dB[ModDat$Sound == 0] <- 0
+#             save(ModDat, file=paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0, "/", file1))
+#         }
+#     }
+# }
