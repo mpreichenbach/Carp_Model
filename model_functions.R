@@ -34,13 +34,14 @@ fit.krig <- function(sound_data, new_data,
     return(fit_KRIG)
 }
 
-plot.interp <- function(points, pond, sound, colours = c("blue", "red", "yellow")){
+plot.interp <- function(points, pond, sound, grad_min, grad_max, 
+                        colours = c("blue", "red", "yellow")){
     plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
         geom_raster() +
         ggtitle(label = paste0(sound, ", Pond ", pond)) +
         xlab("Easting") +
         ylab("Northing") +
-        scale_fill_gradientn(colours = colours) +
+        scale_fill_gradientn(limits=c(grad_min, grad_max), colours = colours) +
         theme_bw() +
         theme(
             axis.text = element_blank(),
