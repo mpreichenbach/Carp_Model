@@ -75,7 +75,8 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
     treatment <- treatment.key(trial=trial, pond=pond)
     
     # load processed telemetry data
-    loadRDS(file.path(data_path, paste0("ProcessData_Trial_", trial, "_pond_", pond, ".rds")))
+    AllData <- readRDS(file.path(data_path, paste0("ProcessData_Trial_", trial, "_pond_", 
+                                                   pond, ".rds")))
     AllData$Trial <- trial
     AllData$Pond <- pond
     AllData$Treatment <- treatment
@@ -96,7 +97,7 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
                           fixPar=c(NA, NA), retryFits = retry_fits, attempts=attempts)
     
     # only keep the necessary covariates
-    covDat <- AllData[,c("ID","Time","Trial","Pond","Treatment","Sound")]
+    covDat <- AllData[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
     
     # merge the CRW data with covariate info from telemetry
     tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
