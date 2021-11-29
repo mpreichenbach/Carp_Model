@@ -160,15 +160,12 @@ pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_c
 }
 
 
-sound.data <- function(path=file.path(getwd(), "Supplementary Files")){
+sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str="30 min"){
     # loads the data frame with sound on/off times, pond, and sound type; also processes date/time
-    # values to POSIXct format. Returns a dataframe ordered by local times.
+    # values to POSIXct format. Rounds values to nearest interval given in round_str; round_str=None
+    # keeps unrounded values. Returns a dataframe ordered by local times.
     
     SoundDat <- read.csv(file.path(path, "Master_Sound_Tag_20200925.csv"), stringsAsFactors=FALSE)
-    
-    # remove the following two lines in the future
-    TrialNum <- sort(unique(SoundDat$Trial))
-    PondNum <- sort(unique(SoundDat$Pond))
     
     colnames(SoundDat)[1] <- 'Trial'
     SoundDat$DT <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
@@ -178,6 +175,10 @@ sound.data <- function(path=file.path(getwd(), "Supplementary Files")){
     SoundDat$DT <- NULL
     SoundDat$Sound[SoundDat$Sound=="ON "] <- "ON"
     SoundDat <- SoundDat[order(SoundDat$locTimes),]
+    
+    if (typeof(round_str) == "character"){
+        SoundDat$locTimes <- round_date(SoundDat$locTimes, round_str)
+    }
     
     return(SoundDat)
 }
@@ -289,3 +290,45 @@ treatment.key <- function(trial, pond){
 #         }
 #     }
 # }
+
+trials <- c(1, 2, 3, 4, 5)
+path <- '~/Carp-Model/Fitted CRWs with dB'
+temp_data <- temperature.data()
+for (trial in trials){
+    subfolders <- list.files(file.path(path, paste0('Trial ', trial)))
+    for (folder in subfolders){
+        files <- list.files(file.path(path, paste0('Trial ', trial), folder))
+        for (file in files){
+            print(file)
+            pond <- substr(file, 18, 19)
+            load(file.path(path, paste0('Trial ', trial), folder, file))
+            ModDat$Diel <- NA
+            ModDat$Temp <- NA
+            ModDat$DT <- NULL
+            ModDat$TimeNum <- NULL
+            ModDat$time <- NULL
+            ModDat$DT <- NULL
+
+            # diel info; 1 is day, 0 is night
+            SunRS <- sunrise.set(38.9122061924, -92.2795993947,
+                                 paste0(year(min(ModDat$Time)), '/', month(min(ModDat$Time)), '/', 
+                                        day(min(ModDat$Time))-1), num.days = 8, 
+                                 timezone='America/North_Dakota/Center')
+            SunRS[,1] <- as.POSIXct(SunRS[,1], origin="1970-01-01", tz = "America/Chicago")
+            SunRS[,2] <- as.POSIXct(SunRS[,2], origin="1970-01-01", tz = "America/Chicago")
+            SunRS$Date <- as.Date(SunRS[,1])
+            
+            # Day is 0, night is 1
+            for(j in 1:(nrow(SunRS)-1)){
+                ModDat$Diel[(ModDat$Time >= SunRS$sunrise[j]) & (ModDat$Time < SunRS$sunset[j])] <- 1
+            }
+            ModDat$Diel[is.na(ModDat$Diel)] <- 0
+            
+            # temperature info
+            avg_temp <- mean(subset(temp_data, Trial == trial & Pond == pond)$Temp_C)
+            ModDat$Temp[ModDat$Trial == trial & ModDat$Pond == pond] <- avg_temp
+            
+            save(ModDat, file = file.path(path, paste0('Trial ', trial), folder, file))
+        }
+    }
+}
