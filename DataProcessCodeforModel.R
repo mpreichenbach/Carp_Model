@@ -12,13 +12,15 @@ library(dplyr)
 library(plyr)
 
 # Matt added the following code
-data_path <- "~/Carp Telemetry/Telemetry Data/withDropTags/"
+data_path <- "~/Carp Telemetry/Telemetry Data/withDropTags/bad_tags_removed/"
 
 #Set working directory
-setwd("~/Carp-Model/Carp Pond Analysis/")
+setwd("~/Carp-Model/Processed Telemetry Data/")
 #Please specify the trial, pond number, and scenario
-TrialNums <- c(1, 2, 3, 4, 5)
-PondNums <- c(26, 27, 30, 31)
+# TrialNums <- c(1, 2, 3, 4, 5)
+# PondNums <- c(26, 27, 30, 31)
+TrialNums <- c(1)
+PondNums <- c(26, 27)
 
 #-------------------------------------------------------------------------------------
 for (TrialNum in TrialNums) {
