@@ -16,8 +16,25 @@ library(tidyverse)
 library(viridis)
 
 
-compile.crw <- function(on_time){
+compile.crw <- function(on_time, ponds = c(26, 27, 30, 31)){
     # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
+    
+    dt_str <- time.to.str(on_time)
+    date_str <- as.character(date(on_time))
+    
+    if  (date_str %in% c("2018-06-11", "2018-06-12", "2018-06-13", "2018-06-14")){
+        trial <- 1
+    }else if (date_str %in% c("2018-06-26", "2018-06-27", "2018-06-28", "2018-06-29")){
+        trial <- 2
+    }else if (date_str %in% c("2018-07-10", "2018-07-11", "2018-07-12", "2018-07-13")){
+        trial <- 3
+    }else if (date_str %in% c("2018-07-24", "2018-07-25", "2018-07-26", "2018-07-27")){
+        trial <- 4
+    }else if (date_str %in% c("2018-08-07", "2018-08-08", "2018-08-09", "2018-08-10")){
+        trial <- 5
+    }
+    
+    
 }
 
 
