@@ -16,6 +16,11 @@ library(tidyverse)
 library(viridis)
 
 
+compile.crw <- function(on_time){
+    # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
+}
+
+
 fit.krig <- function(sound_data, new_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
@@ -34,30 +39,6 @@ fit.krig <- function(sound_data, new_data,
         dplyr::select(x, y, dB = var1.pred)
 
     return(fit_KRIG)
-}
-
-plot.interp <- function(points, pond, sound, grad_min, grad_max, 
-                        colours = c("blue", "red", "yellow")){
-    plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
-        geom_raster() +
-        ggtitle(label = paste0(sound, ", Pond ", pond)) +
-        xlab("Easting") +
-        ylab("Northing") +
-        scale_fill_gradientn(limits=c(grad_min, grad_max), colours = colours) +
-        theme_bw() +
-        theme(
-            axis.text = element_blank(),
-            axis.ticks = element_blank(),
-            plot.title = element_text(size = 18, hjust = 0.5, margin=margin(t = 15)),
-            axis.title.x = element_text(size = 16, margin=margin(b = 15)),
-            axis.title.y = element_text(size = 16, margin=margin(l = 15)),
-            panel.border = element_blank(),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            axis.line = element_blank(),
-        )
-    
-    return(plt)
 }
 
 
@@ -106,6 +87,32 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
     #output to directory
     return(ModDat)
 }
+
+
+plot.interp <- function(points, pond, sound, grad_min, grad_max, 
+                        colours = c("blue", "red", "yellow")){
+    plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
+        geom_raster() +
+        ggtitle(label = paste0(sound, ", Pond ", pond)) +
+        xlab("Easting") +
+        ylab("Northing") +
+        scale_fill_gradientn(limits=c(grad_min, grad_max), colours = colours) +
+        theme_bw() +
+        theme(
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(size = 18, hjust = 0.5, margin=margin(t = 15)),
+            axis.title.x = element_text(size = 16, margin=margin(b = 15)),
+            axis.title.y = element_text(size = 16, margin=margin(l = 15)),
+            panel.border = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_blank(),
+        )
+    
+    return(plt)
+}
+
 
 pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along
@@ -194,6 +201,36 @@ temperature.data <- function(path=file.path(getwd(), "Supplementary Files")){
     return(TData)
 }
 
+
+time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
+    # turns a POSIXct value into a string
+    
+    if (!(hasDate & hasTime)) stop("At least one of hasDate or hasTime must be TRUE.")
+    
+    date_str <- as.character(date(timeVal))
+    
+    if (length(hour(timeVal)) == 1){
+        hr_str <- paste0(0, hour(timeVal))
+    }
+    if (length(minute(timeVal)) == 1){
+        min_str <- paste0(0, minute(timeVal))
+    }
+    if (length(second(timeVal)) == 1){
+        sec_str <- paste0(0, second(timeVal))
+    }
+    
+    time_str <- paste(hr_str, min_str, sec_str, sep=sep)
+    
+    if (hasDate == FALSE){
+        dt_str <- time_str
+    }else if (hasTime == FALSE){
+        dt_str <- hasDate
+    }else{
+        dt_str <- paste(date_str, time_str)
+    }
+    
+    return(dt_str)
+}
 
 treatment.key <- function(trial, pond){
     # this returns the sound treatment type ("Control", "ChirpSquare", "BoatMotor", "ChirpSaw"),
