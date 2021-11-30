@@ -5,6 +5,7 @@ library(lubridate)
 library(maps)
 library(momentuHMM)
 library(mvtnorm)
+library(parallel)
 library(plyr)
 library(raster)
 library(rgdal)
@@ -60,44 +61,40 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 
 
 fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec", 
-                    inits=c(2, 0.001), n_cores=detectCores(), retr_parallel=TRUE, retry_fits=100, 
-                    attempts=100){
+                    inits=c(2, 0.001), retry_fits=100, attempts=100){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
     if (hour(on_time) == 0 & minute(on_time) == 0){
-        on_time_str <-paste(as.character(on_time), "00_00_00")
+        sound_time_str <-paste(as.character(on_time), "00_00_00")
     }else{
-        on_time_str <- str_replace_all(as.character(on_time), ":", "_")
+        sound_time_str <- str_replace_all(as.character(on_time), ":", "_")
     }
     
     # store sound treatment for the particular trial and pond
     treatment <- treatment.key(trial=trial, pond=pond)
     
     # load processed telemetry data
-    AllData <- readRDS(file.path(data_path, paste0("ProcessData_Trial_", trial, "_pond_", 
-                                                   pond, ".rds")))
-    AllData$Trial <- trial
-    AllData$Pond <- pond
-    AllData$Treatment <- treatment
+    telemetry$Trial <- trial
+    telemetry$Pond <- pond
+    telemetry$Treatment <- treatment
     
     #Now subset dataset to just time before and after specified time interval
-    crawldat0 <- subset(AllData, !is.na(Easting))
+    crawldat0 <- subset(telemetry, !is.na(Easting))
     crawldat0$OnDT <- sound_time
     crawldat0 <- subset(crawldat0, DT>=sound_time-seconds_ba & DT<=sound_time+seconds_ba)
     
     rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
-    colnames(rawdat)<-c('ID','x','y','Time')
+    colnames(rawdat)<-c('ID','x','y','time')
     print(paste0("Data subsetting complete for Trial ", trial, ", Pond ", pond, 
                  ", sound-on time ", sound_time_str, "; fitting CRW."))
     
     #Fit the correlated random walk Model
     tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
-                          theta=inits, ncores=n_cores, retryParallel=retryparallel, 
-                          fixPar=c(NA, NA), retryFits = retry_fits, attempts=attempts)
+                          theta=inits, fixPar=c(NA, NA), retryFits = retry_fits, attempts=attempts)
     
     # only keep the necessary covariates
-    covDat <- AllData[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
+    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
     
     # merge the CRW data with covariate info from telemetry
     tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
