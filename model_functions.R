@@ -144,7 +144,15 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "red", 
                         crw_col = "blue"){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
-    # max_time. Returns a list of plots, one for each ID.
+    # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
+    # are in the columns tel_data$DT and crw_data$Time
+    
+    # make sure dataframes are sorted by times
+    tel_data <- tel_data[order(tel_data$DT),]
+    crw_data <- crw_data[order(crw_data$Time),]
+    
+    # subset data and time checks
+    
     
     # ID checks
     tel_ids <- unique(tel_data$ID)
@@ -161,7 +169,43 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         if (!(any(ids %in% crw_ids))){stop("Some IDs supplied are not in the CRW IDs.")}
     }
     
+    # pond checks
+    tel_pond <- unique(tel_data$Pond)
+    crw_pond <- unique(crw_data$Pond)
+    if (length(tel_pond) < 1){
+        stop("No pond values in the telemetry data.")
+    }else if (length(tel_pond) > 1){
+        stop("More than one pond values in the telemetry data.")
+    }
+    if (length(crw_pond) < 1){
+        stop("No pond values in the CRW data.")
+    }else if (length(crw_pond) > 1){
+        stop("More than one pond values in the CRW data.")
+    }
     
+    # converts IDs to strings for later naming
+    ids_str <- c()
+    for (i in 1:length(ids)){
+        append(ids_str(toString(ids[i])))
+    }
+    
+    # get pond GPS coordinates
+    bnd <- subset(pond.locations$boundary, Pond == pond)
+    min_x <- min(bnd$x)
+    max_x <- max(bnd$x)
+    min_y <- min(bnd$y)
+    min_y <- max(bnd$y)
+    
+    # create list of plots
+    plot_list <- list()
+    for (i in 1:length(ids)){
+        tag <- ids[i]
+        tel_sub <- subset(tel_data, ID == tag)
+        crw_sub <- subset(crw_data, ID == tag)
+        plt <- ggplot() + 
+            geom_path(data = tel_sub, aes = aes(x = Easting, x = Northing), na.rm=TRUE) +
+            geom_path(data = crw_sub, aes = aes(x = x, x = y), na.rm=TRUE)            
+    }
 }
 
 pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
