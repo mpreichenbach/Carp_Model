@@ -141,6 +141,29 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 }
 
 
+plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "red", 
+                        crw_col = "blue"){
+    # plots the telemetry tracks and the fitted CRW for the time period between min_time and
+    # max_time. Returns a list of plots, one for each ID.
+    
+    # ID checks
+    tel_ids <- unique(tel_data$ID)
+    crw_ids <- unique(crw_data$ID)
+    if (!(is.null(id))){
+        ids <- union(tel_ids, crw_ids)
+        if (length(ids) != length(tel_ids)){stop("There are more CRW IDs than telemetry IDs.")}
+        if (length(ids) != length(crw_ids)){stop("There are more telemetry IDs than CRW IDs.")}
+        if (!(any(tel_ids %in% crw_ids))){stop("Telemetry IDs are not a subset of CRW IDs.")}
+        if (!(any(crw_ids %in% tel_ids))){stop("CRW IDs are not a subset of telemetry IDs.")}
+    }else{
+        ids <- id
+        if (!(any(ids %in% tel_ids))){stop("Some IDs supplied are not in the telemetry IDs.")}
+        if (!(any(ids %in% crw_ids))){stop("Some IDs supplied are not in the CRW IDs.")}
+    }
+    
+    
+}
+
 pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along
     # with the boundaries of each pond. Returns a list of data frames, one for each
