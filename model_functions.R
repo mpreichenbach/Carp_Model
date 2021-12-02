@@ -162,8 +162,8 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         dplyr::select(ID, Time, x, y, Trial, Pond) %>%
         dplyr::filter((min_time < Time) & (Time < max_time))
     # subset(crw_data, (min_time < crw_data$Time) & (crw_data$Time < max_time))
-    if (nrow(tel_sub) == 0){stop("No telemetry data in specified time interval.")}
-    if (nrow(crw_sub) == 0){stop("No CRW data in the specified time interval.")}
+    if (nrow(tel_data) == 0){stop("No telemetry data in specified time interval.")}
+    if (nrow(crw_data) == 0){stop("No CRW data in the specified time interval.")}
     
     # make sure dataframes are sorted by times
     tel_data <- tel_data[order(tel_data$DT),]
@@ -192,10 +192,38 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     }else if (length(tel_pond) > 1){
         stop("More than one pond value in the telemetry data.")
     }
+    
     if (length(crw_pond) < 1){
         stop("No pond values in the CRW data.")
     }else if (length(crw_pond) > 1){
         stop("More than one pond value in the CRW data.")
+    }
+    
+    if (tel_pond != crw_pond){
+        stop("Telemetry pond does not match the CRW pond.")
+    }else{
+        pond <- tel_pond
+    }
+    
+    # trial checks
+    tel_trial <- unique(tel_data$Trial)
+    crw_trial <- unique(crw_data$Trial)
+    if (length(tel_trial) < 1){
+        stop("No trial values in the telemetry data.")
+    }else if (length(tel_trial) > 1){
+        stop("More than one trial value in the telemetry data.")
+    }
+    
+    if (length(crw_trial) < 1){
+        stop("No trial values in the CRW data.")
+    }else if (length(crw_trial) > 1){
+        stop("More than one trial value in the CRW data.")
+    }
+    
+    if (tel_trial != crw_trial){
+        stop("Telemetry pond does not match the CRW pond.")
+    }else{
+        trial <- tel_trial
     }
     
     # converts IDs to strings for later naming
@@ -218,9 +246,25 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         tel_sub <- subset(tel_data, ID == tag)
         crw_sub <- subset(crw_data, ID == tag)
         plt <- list(ggplot() + 
-            geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing), colour = tel_col, 
-                      na.rm=TRUE) +
-            geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col, na.rm=TRUE)
+                        geom_point(data = tel_sub, mapping = aes(x = Easting, y = Northing),
+                                   colour = tel_col) + 
+                        geom_point(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
+                        geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing), 
+                                  colour = tel_col) +
+                        geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
+                        ggtitle(label = paste0("Trial ", trial, " Pond ", pond, ", ID=", tag,
+                                               "\nFrom ")) +
+                        xlab("Easting") +
+                        ylab("Northing") +
+                        theme_bw() + 
+                        theme(
+                            axis.text = element_blank(),
+                            axis.ticks = element_blank(),
+                            plot.title = element_text(size = 18, hjust = 0.5, 
+                                                      margin=margin(t = 15)),
+                            axis.title.x = element_text(size = 16, margin=margin(b = 0)),
+                            axis.title.y = element_text(size = 16, margin=margin(l = 0)),
+                        )
         )
         
         plot_list <- append(plot_list, plt)
