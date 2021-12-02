@@ -143,7 +143,7 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 
 
 plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
-                        crw_col = "orange1"){
+                        crw_col = "orange1", full_extent=FALSE){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
     # are in the columns tel_data$DT and crw_data$Time
@@ -237,7 +237,7 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     min_x <- min(bnd$x)
     max_x <- max(bnd$x)
     min_y <- min(bnd$y)
-    min_y <- max(bnd$y)
+    max_y <- max(bnd$y)
     
     # get time strings for plotting
     min_time_str <- time.to.str(min_time, sep=":")
@@ -253,6 +253,7 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         tag <- ids[i]
         tel_sub <- subset(tel_data, ID == tag)
         crw_sub <- subset(crw_data, ID == tag)
+        
         plt <- list(ggplot() + 
                         geom_point(data = tel_sub, mapping = aes(x = Easting, y = Northing),
                                    colour = tel_col, size=2) + 
@@ -266,6 +267,8 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
                                             values = c(tel_col, crw_col)) +
                         ggtitle(label = paste0("Trial ", trial, ", Pond ", pond, ", ID = ", tag, 
                                                ",\n", min_time_str, " to ", max_time_str)) +
+                        {if (full_extent)xlim(min_x, max_x)} + 
+                        {if (full_extent)ylim(min_y, max_y)} + 
                         xlab("Easting") +
                         ylab("Northing") +
                         theme_bw() + 
@@ -302,7 +305,7 @@ pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_c
     colnames(LocsDat)[c(1, 2)] <- c("x", "y")
 
     SPK <- LocsDat %>%
-        subset(., Type=="SPK") %>%d
+        subset(., Type=="SPK") %>%
         dplyr::select(x, y, Pond)
     KET <- LocsDat %>%
         subset(., Type=="KET") %>%
@@ -387,12 +390,18 @@ time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
     
     if (nchar(hour(timeVal)) == 1){
         hr_str <- paste0(0, hour(timeVal))
+    }else{
+        hr_str <- as.character(hour(timeVal))
     }
     if (nchar(minute(timeVal)) == 1){
         min_str <- paste0(0, minute(timeVal))
+    }else{
+        min_str <- as.character(minute(timeVal))
     }
     if (nchar(second(timeVal)) == 1){
         sec_str <- paste0(0, second(timeVal))
+    }else{
+        sec_str <- as.character(minute(timeVal))
     }
     
     time_str <- paste(hr_str, min_str, sec_str, sep=sep)
