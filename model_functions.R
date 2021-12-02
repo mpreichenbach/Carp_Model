@@ -142,8 +142,8 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 }
 
 
-plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "red", 
-                        crw_col = "blue"){
+plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
+                        crw_col = "orange1"){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
     # are in the columns tel_data$DT and crw_data$Time
@@ -255,12 +255,16 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         crw_sub <- subset(crw_data, ID == tag)
         plt <- list(ggplot() + 
                         geom_point(data = tel_sub, mapping = aes(x = Easting, y = Northing),
-                                   colour = tel_col) + 
-                        geom_point(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
-                        geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing), 
-                                  colour = tel_col) +
-                        geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
-                        ggtitle(label = paste0("Trial ", trial, ", Pond ", pond, ", ID=", tag, 
+                                   colour = tel_col, size=2) + 
+                        geom_point(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col, 
+                                   size = 2) +
+                        geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing,
+                                                                colour = "Telemetry"), size = 1) +
+                        geom_path(data = crw_sub, mapping = aes(x = x, y = y, colour = "CRW"), 
+                                  size = 1) +
+                        scale_colour_manual("", breaks = c("Telemetry", "CRW"),
+                                            values = c(tel_col, crw_col)) +
+                        ggtitle(label = paste0("Trial ", trial, ", Pond ", pond, ", ID = ", tag, 
                                                ",\n", min_time_str, " to ", max_time_str)) +
                         xlab("Easting") +
                         ylab("Northing") +
@@ -272,6 +276,8 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
                                                       margin=margin(t = 15)),
                             axis.title.x = element_text(size = 16, margin=margin(b = 0)),
                             axis.title.y = element_text(size = 16, margin=margin(l = 0)),
+                            legend.position = c(0.9, 0.9),
+                            legend.text = element_text(size=16)
                         )
         )
         
@@ -296,7 +302,7 @@ pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_c
     colnames(LocsDat)[c(1, 2)] <- c("x", "y")
 
     SPK <- LocsDat %>%
-        subset(., Type=="SPK") %>%
+        subset(., Type=="SPK") %>%d
         dplyr::select(x, y, Pond)
     KET <- LocsDat %>%
         subset(., Type=="KET") %>%
