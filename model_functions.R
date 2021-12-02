@@ -244,9 +244,8 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     if (date(min_time) != date(max_time)){
         max_time_str <- time.to.str(max_time, sep=":")
     }else{
-        max_time_str <- as.character(time())
+        max_time_str <- substr(time.to.str(max_time, sep=":"), 12, 19)
     }
-    
     
     # create list of plots
     plot_list <- list()
@@ -261,8 +260,8 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
                         geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing), 
                                   colour = tel_col) +
                         geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
-                        ggtitle(label = paste0("Trial ", trial, " Pond ", pond, ", ID=", tag,
-                                               "\nFrom ", min_time_str, " to ", max_time_str)) +
+                        ggtitle(label = paste0("Trial ", trial, ", Pond ", pond, ", ID=", tag, 
+                                               ",\n", min_time_str, " to ", max_time_str)) +
                         xlab("Easting") +
                         ylab("Northing") +
                         theme_bw() + 
