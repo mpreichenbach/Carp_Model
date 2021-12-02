@@ -239,6 +239,15 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     min_y <- min(bnd$y)
     min_y <- max(bnd$y)
     
+    # get time strings for plotting
+    min_time_str <- time.to.str(min_time, sep=":")
+    if (date(min_time) != date(max_time)){
+        max_time_str <- time.to.str(max_time, sep=":")
+    }else{
+        max_time_str <- as.character(time())
+    }
+    
+    
     # create list of plots
     plot_list <- list()
     for (i in 1:length(ids)){
@@ -253,7 +262,7 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
                                   colour = tel_col) +
                         geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col) +
                         ggtitle(label = paste0("Trial ", trial, " Pond ", pond, ", ID=", tag,
-                                               "\nFrom ")) +
+                                               "\nFrom ", min_time_str, " to ", max_time_str)) +
                         xlab("Easting") +
                         ylab("Northing") +
                         theme_bw() + 
@@ -371,13 +380,13 @@ time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
     
     date_str <- as.character(date(timeVal))
     
-    if (length(hour(timeVal)) == 1){
+    if (nchar(hour(timeVal)) == 1){
         hr_str <- paste0(0, hour(timeVal))
     }
-    if (length(minute(timeVal)) == 1){
+    if (nchar(minute(timeVal)) == 1){
         min_str <- paste0(0, minute(timeVal))
     }
-    if (length(second(timeVal)) == 1){
+    if (nchar(second(timeVal)) == 1){
         sec_str <- paste0(0, second(timeVal))
     }
     
