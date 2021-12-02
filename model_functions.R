@@ -1,6 +1,7 @@
 library(animation)
 library(automap)
 library(circular)
+library(ggplot2)
 library(lubridate)
 library(maps)
 library(momentuHMM)
@@ -147,17 +148,31 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
     # are in the columns tel_data$DT and crw_data$Time
     
+    # time order check
+    if (min_time > max_time){stop("Minimum time is greater than maximum time.")}
+    
+    # subset data
+    tel_data <- tel_data %>% 
+        drop_na() %>%
+        dplyr::select(DT, Easting, Northing, ID, Pond, Trial) %>%
+        dplyr::filter((min_time < DT) & (DT < max_time))
+        # subset(tel_data, (min_time < tel_data$DT) & (tel_data$DT < max_time))
+    crw_data <- crw_data %>%
+        drop_na() %>%
+        dplyr::select(ID, Time, x, y, Trial, Pond) %>%
+        dplyr::filter((min_time < Time) & (Time < max_time))
+    # subset(crw_data, (min_time < crw_data$Time) & (crw_data$Time < max_time))
+    if (nrow(tel_sub) == 0){stop("No telemetry data in specified time interval.")}
+    if (nrow(crw_sub) == 0){stop("No CRW data in the specified time interval.")}
+    
     # make sure dataframes are sorted by times
     tel_data <- tel_data[order(tel_data$DT),]
     crw_data <- crw_data[order(crw_data$Time),]
     
-    # subset data and time checks
-    
-    
     # ID checks
     tel_ids <- unique(tel_data$ID)
     crw_ids <- unique(crw_data$ID)
-    if (!(is.null(id))){
+    if (is.null(id)){
         ids <- union(tel_ids, crw_ids)
         if (length(ids) != length(tel_ids)){stop("There are more CRW IDs than telemetry IDs.")}
         if (length(ids) != length(crw_ids)){stop("There are more telemetry IDs than CRW IDs.")}
@@ -175,22 +190,22 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     if (length(tel_pond) < 1){
         stop("No pond values in the telemetry data.")
     }else if (length(tel_pond) > 1){
-        stop("More than one pond values in the telemetry data.")
+        stop("More than one pond value in the telemetry data.")
     }
     if (length(crw_pond) < 1){
         stop("No pond values in the CRW data.")
     }else if (length(crw_pond) > 1){
-        stop("More than one pond values in the CRW data.")
+        stop("More than one pond value in the CRW data.")
     }
     
     # converts IDs to strings for later naming
     ids_str <- c()
     for (i in 1:length(ids)){
-        append(ids_str(toString(ids[i])))
+        ids_str <- append(ids_str, toString(ids[i]))
     }
     
     # get pond GPS coordinates
-    bnd <- subset(pond.locations$boundary, Pond == pond)
+    bnd <- subset(pond.locations()$boundary, Pond == pond)
     min_x <- min(bnd$x)
     max_x <- max(bnd$x)
     min_y <- min(bnd$y)
@@ -202,10 +217,19 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
         tag <- ids[i]
         tel_sub <- subset(tel_data, ID == tag)
         crw_sub <- subset(crw_data, ID == tag)
-        plt <- ggplot() + 
-            geom_path(data = tel_sub, aes = aes(x = Easting, x = Northing), na.rm=TRUE) +
-            geom_path(data = crw_sub, aes = aes(x = x, x = y), na.rm=TRUE)            
+        plt <- list(ggplot() + 
+            geom_path(data = tel_sub, mapping = aes(x = Easting, y = Northing), colour = tel_col, 
+                      na.rm=TRUE) +
+            geom_path(data = crw_sub, mapping = aes(x = x, y = y), colour = crw_col, na.rm=TRUE)
+        )
+        
+        plot_list <- append(plot_list, plt)
     }
+    
+    # make ID string the name of each respective plot
+    names(plot_list) <- ids_str
+    
+    return(plot_list)
 }
 
 pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
@@ -221,16 +245,16 @@ pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_c
 
     SPK <- LocsDat %>%
         subset(., Type=="SPK") %>%
-        select(x, y, Pond)
+        dplyr::select(x, y, Pond)
     KET <- LocsDat %>%
         subset(., Type=="KET") %>%
-        select(x, y, Pond)
+        dplyr::select(x, y, Pond)
     HYD <- LocsDat %>%
         subset(., Type=="HYD") %>%
-        select(x, y, Pond)
+        dplyr::select(x, y, Pond)
     BND <- LocsDat %>%
         subset(., Type=="BND") %>%
-        select(x, y, Pond)
+        dplyr::select(x, y, Pond)
 
     rownames(SPK) <- rownames(KET) <- rownames(BND) <- rownames(HYD) <- NULL
     
