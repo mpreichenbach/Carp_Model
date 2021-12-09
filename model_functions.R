@@ -142,8 +142,8 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 }
 
 
-plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
-                        crw_col = "orange1", full_extent=FALSE){
+plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
+                        crw_col = "orange1", full_extent=FALSE, background = c("satellite", "sound")){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
     # are in the columns tel_data$DT and crw_data$Time
@@ -152,19 +152,21 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     if (min_time > max_time){stop("Minimum time is greater than maximum time.")}
     
     # subset data
-    tel_data <- tel_data %>% 
-        drop_na() %>%
-        dplyr::select(DT, Easting, Northing, ID, Pond, Trial) %>%
-        dplyr::filter((min_time < DT) & (DT < max_time))
-        # subset(tel_data, (min_time < tel_data$DT) & (tel_data$DT < max_time))
-    crw_data <- crw_data %>%
-        drop_na() %>%
-        dplyr::select(ID, Time, x, y, Trial, Pond) %>%
-        dplyr::filter((min_time < Time) & (Time < max_time))
-    # subset(crw_data, (min_time < crw_data$Time) & (crw_data$Time < max_time))
-    if (nrow(tel_data) == 0){stop("No telemetry data in specified time interval.")}
-    if (nrow(crw_data) == 0){stop("No CRW data in the specified time interval.")}
-    
+    if (!is.null(tel_data)){
+        tel_data <- tel_data %>% 
+            drop_na() %>%
+            dplyr::select(DT, Easting, Northing, ID, Pond, Trial) %>%
+            dplyr::filter((min_time < DT) & (DT < max_time))
+        if (nrow(tel_data) == 0){stop("No telemetry data in specified time interval.")}
+    }
+    if (!is.null(crw_data)){
+        crw_data <- crw_data %>%
+            drop_na() %>%
+            dplyr::select(ID, Time, x, y, Trial, Pond) %>%
+            dplyr::filter((min_time < Time) & (Time < max_time))
+        if (nrow(crw_data) == 0){stop("No CRW data in the specified time interval.")}
+    }
+
     # make sure dataframes are sorted by times
     tel_data <- tel_data[order(tel_data$DT),]
     crw_data <- crw_data[order(crw_data$Time),]
@@ -238,6 +240,11 @@ plot.tracks <- function(tel_data, crw_data, id = NULL, min_time, max_time, tel_c
     max_x <- max(bnd$x)
     min_y <- min(bnd$y)
     max_y <- max(bnd$y)
+    
+    if (background == satellite){
+        sat <- read
+    }
+    
     
     # get time strings for plotting
     min_time_str <- time.to.str(min_time, sep=":")
@@ -480,6 +487,24 @@ treatment.key <- function(trial, pond){
     
     return(treatment)
 }
+
+##### this code generates maps centered in the middle of the ponds
+# for (pond in c(26, 27, 30, 31)){
+#     bnd <- subset(pond_locations$boundary, Pond == pond)
+#     center <- c((min(bnd$x) + max(bnd$x)) / 2, (min(bnd$y) + max(bnd$y)) / 2)
+#     center_utm <- as.data.frame(t(center))
+#     colnames(center_utm) <- c("x", "y")
+#     coordinates(center_utm) <- ~x + y
+#     proj4string(center_utm) <- CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84")
+#     center_ll <- spTransform(center_utm, CRS("+proj=longlat +datum=WGS84"))
+# 
+#     long <- center_ll$x
+#     lat <- center_ll$y
+# 
+#     name <- paste("Pond_", pond)
+#     plt <- get_googlemap(center = c(long, lat), zoom = 20, scale = 2, maptype = "satellite")
+#     saveRDS(plt, file.path("~/Carp-Model/Supplementary Files/Pond Maps", paste0(name, ".RDS")))
+# }
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
 # trials <- c(1, 2, 3, 4, 5)
