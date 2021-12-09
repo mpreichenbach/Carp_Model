@@ -48,6 +48,21 @@ compile.crw <- function(on_time, ponds = c(26, 27, 30, 31), path="~/Carp-Model/F
     return(df)
 }
 
+convert.coords <- function(df, 
+                           input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
+                           output_crs = CRS("+proj=longlat +datum=WGS84")){
+    # takes a dataframe of x,y (Easting, Northing) points and converts them to output projection.
+    
+    x <- colnames(df)[1]
+    y <- colnames(df)[2]
+    coordinates(df) <- ~x + y
+    proj4string(df) <- input_crs
+    
+    df_out <- as.data.frame(spTransform(df, output_crs)@coords)
+    
+    return(df_out)
+}
+
 
 fit.krig <- function(sound_data, new_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
@@ -143,7 +158,7 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
 
 
 plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
-                        crw_col = "orange1", full_extent=FALSE, background = c("satellite", "sound")){
+                        crw_col = "orange1", full_extent=FALSE){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
     # are in the columns tel_data$DT and crw_data$Time
@@ -241,11 +256,6 @@ plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, m
     min_y <- min(bnd$y)
     max_y <- max(bnd$y)
     
-    if (background == satellite){
-        sat <- read
-    }
-    
-    
     # get time strings for plotting
     min_time_str <- time.to.str(min_time, sep=":")
     if (date(min_time) != date(max_time)){
@@ -289,7 +299,7 @@ plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, m
                             legend.position = c(0.9, 0.9),
                             legend.text = element_text(size=16)
                         )
-        )
+                    )
         
         plot_list <- append(plot_list, plt)
     }
