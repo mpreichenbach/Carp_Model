@@ -17,7 +17,7 @@ library(tidyverse)
 library(viridis)
 
 
-compile.crw <- function(on_time, ponds = c(26, 27, 30, 31), path="~/Carp-Model/Fitted CRWs"){
+compile.crw <- function(on_time, path="~/Carp-Model/Fitted CRWs"){
     # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
     
     dt_str <- time.to.str(on_time)
@@ -38,13 +38,14 @@ compile.crw <- function(on_time, ponds = c(26, 27, 30, 31), path="~/Carp-Model/F
     pond_files <- list.files(path = file.path(path, paste("Trial", trial), dt_str), full.names=TRUE)
     load(file=pond_files[1])
     df <- ModDat
+    rm(ModDat)
     for (i in 2:length(pond_files)){
         load(pond_files[i])
         df0 <- ModDat
+        rm(ModDat)
         df <- rbind(df, df0)
     }
-    rm(ModDat)
-    
+
     return(df)
 }
 
@@ -124,8 +125,13 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
     # merge the CRW data with covariate info from telemetry
     tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
     
+    # add in distance to speaker
+    SPK <- subset(pond.locations()$speakers, Pond == pond)
+    tempDat0$Dist2SPK <- sqrt((SPK$x - ModDat$x)^2 + (SPK$y - ModDat$y)^2)
+    
     #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel"))
+    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel",
+                                                 "Dist2SPK"))
     
     #output to directory
     return(ModDat)
@@ -554,11 +560,17 @@ treatment.key <- function(trial, pond){
 #         files <- list.files(file.path(path, paste0('Trial ', trial), folder))
 #         for (file in files){
 #             print(file)
-#             pond <- substr(file, 18, 19)
-#             load(file.path(path, paste0('Trial ', trial), folder, file))
-#             ModDat$TimeNum <- NULL
+#             if (grepl("CRW_Trial_5", file) & (trial != 5)){
+#                 file.remove(file.path(path, paste0('Trial ', trial), folder, file))
+#             }else {
+#                 next
+#             }
+#             # pond <- substr(file, 18, 19)
+#             # load(file.path(path, paste0('Trial ', trial), folder, file))
+#             # name <- substr(file, 1, 47)
+# 
 #             # ModDat$Diel <- NA
-#             # 
+#             #
 #             # # diel info; 1 is day, 0 is night
 #             # SunRS <- sunrise.set(38.9122061924, -92.2795993947,
 #             #                      paste0(year(min(ModDat$Time)), '/', month(min(ModDat$Time)), '/',
@@ -567,15 +579,15 @@ treatment.key <- function(trial, pond){
 #             # SunRS[,1] <- as.POSIXct(SunRS[,1], origin="1970-01-01", tz = "America/Chicago")
 #             # SunRS[,2] <- as.POSIXct(SunRS[,2], origin="1970-01-01", tz = "America/Chicago")
 #             # SunRS$Date <- as.Date(SunRS[,1])
-#             # 
+#             #
 #             # # Day is 0, night is 1
 #             # for(j in 1:(nrow(SunRS)-1)){
 #             #     ModDat$Diel[(ModDat$Time >= SunRS$sunrise[j]) & (ModDat$Time < SunRS$sunset[j])] <- 1
 #             # }
 #             # ModDat$Diel[is.na(ModDat$Diel)] <- 0
-#         
 # 
-#             save(ModDat, file = file.path(path, paste0('Trial ', trial), folder, file))
+#             # saveRDS(ModDat, file = file.path(path, paste0('Trial ', trial), folder, 
+#             #                                  paste0(name, ".RDS")))
 #         }
 #     }
 # }
