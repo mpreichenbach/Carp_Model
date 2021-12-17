@@ -88,7 +88,7 @@ fit.krig <- function(sound_data, new_data,
 
 
 fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec", 
-                    inits=c(2, 0.001), retry_fits=100, doParallel = TRUE,
+                    inits=c(2, 0.001), attempts = 100, retry_fits=100, doParallel = TRUE,
                     ncores = ceiling(0.75 * detectCores())){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
@@ -104,37 +104,31 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
     
     # load processed telemetry data
     telemetry$Treatment <- treatment
+    telemetry$Time <- telemetry$DT
+    # telemetry$DT <- NULL
     
     #Now subset dataset to just time before and after specified time interval
     crawldat0 <- subset(telemetry, !is.na(Easting))
     crawldat0$OnDT <- on_time
-    crawldat0 <- subset(crawldat0, DT>=on_time-seconds_ba & DT<=on_time+seconds_ba)
+    crawldat0 <- subset(crawldat0, (Time>=OnDT-seconds_ba) & (Time<=OnDT+seconds_ba))
     
-    rawdat <- crawldat0[, c("ID","Easting","Northing","DT")]
-    colnames(rawdat)<-c('ID','x','y','time')
-    print(paste0("Data subsetting complete for Trial ", trial, ", Pond ", pond, 
-                 ", sound-on time ", sound_time_str, "; fitting CRW."))
-    
+    rawdat <- crawldat0[, c("ID","Easting","Northing","Time")]
+    colnames(rawdat)<-c('ID','x','y','Time')
+
     #Fit the correlated random walk Model
     tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
-                          theta=inits, fixPar=c(NA, NA), retryFits = retry_fits,
-                          doParallel = doParallel, ncores = ncores)
+                          theta=inits, fixPar=c(NA, NA), attempts = attempts, Time.name = "Time",
+                          retryFits = retry_fits, doParallel = doParallel, ncores = ncores)
     
     # only keep the necessary covariates
-    covDat <- telemetry[,c("ID","DT","Trial","Pond","Treatment","Sound", "Diel")]
+    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
     
     # merge the CRW data with covariate info from telemetry
     tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
     
-    # add in distance to speaker
-    SPK <- subset(pond.locations()$speakers, Pond == pond)
-    tempDat0$Dist2SPK <- sqrt((SPK$x - ModDat$x)^2 + (SPK$y - ModDat$y)^2)
-    
     #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel",
-                                                 "Dist2SPK"))
-    
-    #output to directory
+    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel"))
+
     return(ModDat)
 }
 
