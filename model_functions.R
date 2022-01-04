@@ -402,7 +402,7 @@ temperature.data <- function(path=file.path(getwd(), "Supplementary Files")){
 time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
     # turns a POSIXct value into a string
     
-    if (!(hasDate & hasTime)) stop("At least one of hasDate or hasTime must be TRUE.")
+    if (!(hasDate | hasTime)) stop("At least one of hasDate or hasTime must be TRUE.")
     
     date_str <- as.character(date(timeVal))
     
@@ -585,4 +585,29 @@ treatment.key <- function(trial, pond){
 #             #                                  paste0(name, ".RDS")))
 #         }
 #     }
+# }
+
+# this code compiles the CRWs for each sound repetition across trials.
+# for (i in 1:24){
+#     day_val <- as.integer(i / 6) + 1
+#     for (trial in 1:5){
+#         sound_times <- unique(subset(sound.data(), (Trial == trial) & (Sound == "ON"))$locTimes)
+#         on_dt <- sound_times[i]
+#         on_str <- time.to.str(on_dt)
+#         print(paste("Trial", trial, on_str))
+#         if (trial == 1){
+#             df <- readRDS(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", on_str, "/CRW_Trial_1_Pond_26_SoundOn_", on_str, ".RDS"))
+#             for (pond in c(27, 30, 31)){
+#                 df0 <- readRDS(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", on_str, "/CRW_Trial_1_Pond_", pond, "_SoundOn_", on_str, ".RDS"))
+#                 df <- rbind(df, df0)
+#             }
+#         }else{
+#             for (file in list.files(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", on_str))){
+#                 print(file)
+#                 df0 <- readRDS(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", on_str, "/", file))
+#                 df <- rbind(df, df0)
+#             }
+#         }
+#     }
+#     saveRDS(df, file = paste0("~/Carp-Model/Fitted CRWs/", "Repetition ", i, "(Day ", day_val, substr(on_dt, 12, 13), "00).RDS"))
 # }
