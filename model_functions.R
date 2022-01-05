@@ -499,6 +499,92 @@ treatment.key <- function(trial, pond){
     return(treatment)
 }
 
+movement.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list(step = "gamma", angle = "vm"),
+                           initPar = list(step = c(2, 1, 2, 1, 0, 0), angle = c(0.004, 0.004, 0.002, 0.002))){
+    # this fits an initial movement model to give better starting values when fitting the full HMM.
+    
+    m1 <- fitHMM(data = df, 
+                 nbStates = length(stateNames),
+                 dist = dist,
+                 Par0 = initPar,
+                 estAngleMean = list(angle=TRUE),
+                 stateNames = stateNames)
+    
+    # estimates the states for each observation
+    m1$data$states <- viterbi(m1)
+    
+   return(m1)
+}
+
+######################################################################################################
+#Now fit the movement model
+#---------------------------------------------------------------------
+#----Step 1
+# label states
+stateNames <- c("exploratory","encamped") #
+# distributions for observation processes
+dist = list(step = "gamma", angle = "vm") #"wrpcauchy"
+# initial parameters
+Par0_m1 <- list(step=c(2,1,2,1,0,0), angle=c(0.004,0.004,0.002,0.002))
+# fit model
+m1 <- fitHMM(data = FishData[FishData$Trial!=4,], 
+             nbStates = 2, 
+             dist = dist, 
+             Par0 = Par0_m1,
+             estAngleMean = list(angle=TRUE), 
+             stateNames = stateNames)
+
+#estimates of the state for each observation
+states <- viterbi(m1)
+#table(states)/nrow(FishData[FishData$Trial!=4,])
+m1$data$states <- viterbi(m1)
+
+#--------------------------------------------------------------------
+#----Step 2
+#First convert two factor sound variable into a continuous variable to accommodate fit function
+m1$data$trmt[m1$data$trmt=="Control"] <- "AControl"
+
+m1$data <- within(m1$data, {
+    Sound <- as.factor(Sound)
+    trmt <- as.factor(trmt)
+    Pond <- as.factor(Pond)
+    Trial <- as.factor(Trial)
+    TempC <- as.numeric(TempC)
+})
+#----------------------------------------------------------------------
+#The Full Model
+# formula for transition probabilities
+formulaF <- ~ TempC + Trial + Pond + Sound * trmt 
+# initial parameters (obtained from nested model m1)
+Par0_m2 <- getPar0(model=m1, formula=formulaF)
+# first fit the transition probability model to obtain reasonable starting values for the full model
+m2 <- fitHMM(data = m1$data, nbStates = 2, 
+             dist = dist, 
+             Par0 = Par0_m2$Par, 
+             estAngleMean = list(angle=TRUE),
+             stateNames = stateNames, 
+             beta0 = Par0_m2$beta,
+             formula = formulaF)
+
+DM <- list(step = list(mean = ~ TempC + Trial + Pond + Sound * trmt,
+                       sd = ~ 1,
+                       zeromass = ~ 1),
+           angle = list(mean = ~ TempC + Trial + Pond + Sound * trmt,
+                        concentration = ~ 1))
+
+# initial parameters (obtained from nested model m2)
+Par0_m3 <- getPar0(model=m2, formula=formulaF, DM=DM)
+# fit model
+FullMod <- fitHMM(data =  m2$data, nbStates = 2, 
+                  dist = dist, 
+                  Par0 = Par0_m3$Par, 
+                  beta0 = Par0_m3$beta, 
+                  DM = DM, 
+                  stateNames = stateNames, 
+                  estAngleMean = list(angle=TRUE),
+                  formula = formulaF)
+
+
 ##### this code generates maps centered in the middle of the ponds
 # for (pond in c(26, 27, 30, 31)){
 #     bnd <- subset(pond_locations$boundary, Pond == pond)
