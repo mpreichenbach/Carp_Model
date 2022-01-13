@@ -531,13 +531,14 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
     print("Finished fitting movement model (step 1/3).")
     
     # this fits a model to estimate good starting transition probabilities
-    initPar1 <- getPar(model = m1, formula = modelFormula)
+    initPar1 <- getPar0(model = m1, formula = modelFormula)
     
     m2 <- fitHMM(data = m1$data,
                  dist = dist,
                  nbStates = length(stateNames),
                  estAngleMean = list(angle = TRUE),
                  stateNames = stateNames,
+                 Par0 = initPar1$Par,
                  beta0 = initPar1$beta,
                  formula = modelFormula)
     
@@ -548,7 +549,7 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
     
     # this fits the full model
     
-    initPar2 <- getPar(model = m2, formula = modelFormula, DM = DM)
+    initPar2 <- getPar0(model = m2, formula = modelFormula, DM = DM)
     
     FullMod <- fitHMM(data = m2$data,
                       nbStates = length(stateNames),
@@ -557,7 +558,7 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
                       beta0 = initPar2$beta,
                       DM = DM,
                       stateNames = stateNames,
-                      estAngleMEan = list(angle = TRUE),
+                      estAngleMean = list(angle = TRUE),
                       formula = modelFormula)
     
     print("Finished fitting full model (step 3/3).")

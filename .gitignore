@@ -7,8 +7,10 @@
 /Sound Mapping
 /Supplementary Files
 /Workspaces
+*.RData
 .Rproj.user
 .Rhistory
 Carp-Model.R
 .RDATA
 Carp-Model.Rproj
+in_progress.txt
