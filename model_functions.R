@@ -221,16 +221,19 @@ get.formulas <- function(nCov){
                    "~Trial+Temp+dB*Treatment", "~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
                    "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment)")
     }else if (nCov == 5){
-        names <- c("~1", "~Trial+Pond+Diel+Temp + dB", "~Trial+Pond+Diel+Temp+Treatment",
+        names <- c("~1", "~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
                    "~Trial+Pond+Diel+dB*Treatment", "~Trial+Pond+Temp+dB*Treatment",
                    "~Trial+Diel+Temp+dB*Treatment", "~Pond+Diel+Temp+dB*Treatment")
     }else if (nCov == 6){
         names <- c("~1", "~Trial+Pond+Diel+Temp+dB*Treatment")
     }
     
-    formulas <- as.formula(names)
-    form_list <- list(x=names, y=formulas)
+    form_list <- list()
     
+    for (i in 1:length(names)){
+        form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
+    }
+
     return(form_list)
 }
 
@@ -669,6 +672,32 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
     
     return(out_list)
 }
+
+
+fit.model.mclapply <- function(list_element){
+    # this runs fit.model, but with a single element so that it can be entered as an argument in 
+    # parallel::mclapply().
+    
+    other.func <- fit.model(list_element$data, stateNames=c("exploratory", "encamped"), dist=list(step="gamma", angle="vm"),
+                            initPar=list(step=c(2, 1, 2, 1, 0, 0), angle=c(0.004, 0.004, 0.002, 0.002)),
+                            modelFormula=list_element$formula)
+}
+
+# run the following code in Linux; Windows does not support forking, so mclapply doesn't work.
+# for (i in 0:1){
+#     form_list <- get.formulas(i)
+#     form_names <- names(form_list)
+#     
+#     dataList <- list()
+#     for (j in 1:length(form_list)){
+#         form_name <- names(form_list)[j]
+#         fmla <- form_names[[j]]
+#         dataList[[form_name]] <- list("formula"=fmla, "data"=rep1)
+#     }
+#     
+#     model_list <- mclapply(dataList, fit.model.mclapply, mc.cores=12)
+#     saveRDS(paste0("~/Carp-Model/Fitted HMMs/Repetition 1, ", i, " covariates.RDS"))
+# }
 
 
 ##### this code generates maps centered in the middle of the ponds
