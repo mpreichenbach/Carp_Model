@@ -7,6 +7,7 @@
 /Sound Mapping
 /Supplementary Files
 /Workspaces
+/Fitted HMMs
 *.RData
 .Rproj.user
 .Rhistory
