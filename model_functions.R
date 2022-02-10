@@ -200,14 +200,14 @@ get.formulas <- function(nCov){
     if (nCov == 0){
         names <- c("~1")
     }else if (nCov == 1){
-        names <- c("~1", "~Trial", "~Pond", "~Diel", "~Temp", "~dB", "~Treatment")
+        names <- c("~Trial", "~Pond", "~Diel", "~Temp", "~dB", "~Treatment")
     }else if (nCov == 2){
-        names <- c("~1", "~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
+        names <- c("~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
                    "~Trial+Treatment", "~Pond+Diel", "~Pond+Temp", "~Pond+dB", "~Pond+Treatment", 
                    "~Diel+Temp", "~Diel+dB", "~Diel+Treatment", "~Temp+dB", "~Temp+Treatment", 
                    "~dB*Treatment")
     }else if (nCov == 3){
-        names <- c("~1", "~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
+        names <- c("~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
                    "~Trial+Pond+Treatment", "~Trial+Diel+Temp", "~Trial+Diel+dB", 
                    "~Trial+Diel+Treatment", "~Trial+Temp+dB", "~Trial+Temp+Treatment", 
                    "~Trial+dB*Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
@@ -215,17 +215,17 @@ get.formulas <- function(nCov){
                    "~Pond+dB*Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
                    "~Diel+dB*Treatment", "~Temp+dB*Treatment")
     }else if (nCov == 4){
-        names <- c("~1","~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
+        names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
                    "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db*Treatment",
                    "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", "~Trial+Diel+dB*Treatment",
                    "~Trial+Temp+dB*Treatment", "~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
-                   "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment)")
+                   "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
     }else if (nCov == 5){
-        names <- c("~1", "~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
+        names <- c("~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
                    "~Trial+Pond+Diel+dB*Treatment", "~Trial+Pond+Temp+dB*Treatment",
                    "~Trial+Diel+Temp+dB*Treatment", "~Pond+Diel+Temp+dB*Treatment")
     }else if (nCov == 6){
-        names <- c("~1", "~Trial+Pond+Diel+Temp+dB*Treatment")
+        names <- c("~Trial+Pond+Diel+Temp+dB*Treatment")
     }
     
     form_list <- list()
@@ -674,14 +674,35 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
 }
 
 
-fit.model.mclapply <- function(list_element){
+fit.model.list <- function(list_element){
     # this runs fit.model, but with a single element so that it can be entered as an argument in 
     # parallel::mclapply().
     
-    other.func <- fit.model(list_element$data, stateNames=c("exploratory", "encamped"), dist=list(step="gamma", angle="vm"),
+    hmm <- fit.model(list_element$data, stateNames=c("exploratory", "encamped"), dist=list(step="gamma", angle="vm"),
                             initPar=list(step=c(2, 1, 2, 1, 0, 0), angle=c(0.004, 0.004, 0.002, 0.002)),
                             modelFormula=list_element$formula)
+    
+    return(hmm)
 }
+
+## multiprocessing
+# time_list = list()
+# mp_list = list()
+# for (j in 1:20){
+#     mp_list[[j]] = list(formula=~1, data=rep1_mini)
+# }
+# for (i in 1:1){
+#     cl <- makeCluster(i)
+#     clusterExport(cl, c("fit.model.maker", "fit.model"))
+#     clusterEvalQ(cl, library(momentuHMM))
+#     tic = Sys.time()
+#     fit_out <- parLapply(cl, mp_list, fit.model.maker)
+#     toc = Sys.time()
+#     time_list[[i]] <- toc - tic
+#     print(paste("Cluster of", i, ":"))
+#     print(toc - ti)
+#     stopCluster(cl)
+# }
 
 # run the following code in Linux; Windows does not support forking, so mclapply doesn't work.
 # for (i in 0:1){
