@@ -686,40 +686,32 @@ fit.model.list <- function(list_element){
 }
 
 ## multiprocessing
-# time_list = list()
-# mp_list = list()
-# for (j in 1:20){
-#     mp_list[[j]] = list(formula=~1, data=rep1_mini)
-# }
-# for (i in 1:1){
+# times <- c()
+# lb_times <- c()
+# 
+# for (i in 1:10){
 #     cl <- makeCluster(i)
-#     clusterExport(cl, c("fit.model.maker", "fit.model"))
+#     clusterExport(cl, c("fit.model.list", "fit.model"))
 #     clusterEvalQ(cl, library(momentuHMM))
+#     
+#     # parLapply block
 #     tic = Sys.time()
-#     fit_out <- parLapply(cl, mp_list, fit.model.maker)
+#     parLapply(cl, f_list, fit.model.list)
 #     toc = Sys.time()
-#     time_list[[i]] <- toc - tic
-#     print(paste("Cluster of", i, ":"))
-#     print(toc - ti)
+#     times[[i]] <- as.numeric(toc - tic)
+#     print(paste0("Applying parLapply on cluster of ", i, " nodes:"))
+#     print(toc - tic)
+#     
+#     #parLapplyLB (load balancing) block
+#     tic = Sys.time()
+#     parLapplyLB(cl, f_list, fit.model.list)
+#     toc = Sys.time()
+#     lb_times[[i]] <- as.numeric(toc - tic)
+#     print(paste0("Applying parLapplyLB on cluster of ", i, " nodes:"))
+#     print(toc - tic)
+#     
 #     stopCluster(cl)
 # }
-
-# run the following code in Linux; Windows does not support forking, so mclapply doesn't work.
-# for (i in 0:1){
-#     form_list <- get.formulas(i)
-#     form_names <- names(form_list)
-#     
-#     dataList <- list()
-#     for (j in 1:length(form_list)){
-#         form_name <- names(form_list)[j]
-#         fmla <- form_names[[j]]
-#         dataList[[form_name]] <- list("formula"=fmla, "data"=rep1)
-#     }
-#     
-#     model_list <- mclapply(dataList, fit.model.mclapply, mc.cores=12)
-#     saveRDS(paste0("~/Carp-Model/Fitted HMMs/Repetition 1, ", i, " covariates.RDS"))
-# }
-
 
 ##### this code generates maps centered in the middle of the ponds
 # for (pond in c(26, 27, 30, 31)){
