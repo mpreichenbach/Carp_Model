@@ -252,11 +252,11 @@ get.formulas <- function(nCov, include_diel=FALSE){
             names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
         }else if (nCov == 2){
             names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
-                       "~Pond+dB", "~Pond+Treatment", "Temp+dB", "~Temp+Treatment", "dB*Treatment")
+                       "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB*Treatment")
         }else if (nCov == 3){
             names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
-                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "Trial+dB*Treatment", 
-                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "Pond+dB*Treatment", 
+                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB*Treatment", 
+                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB*Treatment", 
                        "~Temp+dB*Treatment")
         }else if (nCov == 4){
             names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
