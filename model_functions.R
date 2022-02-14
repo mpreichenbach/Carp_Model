@@ -187,9 +187,14 @@ fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec
     return(ModDat)
 }
 
-get.formulas <- function(nCov){
+get.formulas <- function(nCov, include_diel=FALSE){
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
-    # "Trial", "Pond", "Diel", "Temp", "dB", "Treatment". If we ever study a different collection, 
+    # "Trial", "Pond", "Diel", "Temp", "dB", "Treatment". Most subsets of the telemetry data
+    # only have one value for diel, which will cause problems in model fitting. For these cases, use
+    # the default value of the include_diel argument. If the time block of interest contains sunrise
+    # or sunset, the data will contain 0, 1 values for diel, and include_diel should be set to TRUE.
+    
+    # If we ever study a different collection, 
     # it would be helpful to expand this function to allow for covariate name inputs, and an
     # n-choose-k functionality to return all possible formulas with nCov covariates.
     
@@ -197,41 +202,75 @@ get.formulas <- function(nCov){
         stop("nCov must be 0, 1, 2, 3, 4, or 5.")
     }
     
-    if (nCov == 0){
-        names <- c("~1")
-    }else if (nCov == 1){
-        names <- c("~Trial", "~Pond", "~Diel", "~Temp", "~dB", "~Treatment")
-    }else if (nCov == 2){
-        names <- c("~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
-                   "~Trial+Treatment", "~Pond+Diel", "~Pond+Temp", "~Pond+dB", "~Pond+Treatment", 
-                   "~Diel+Temp", "~Diel+dB", "~Diel+Treatment", "~Temp+dB", "~Temp+Treatment", 
-                   "~dB*Treatment")
-    }else if (nCov == 3){
-        names <- c("~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
-                   "~Trial+Pond+Treatment", "~Trial+Diel+Temp", "~Trial+Diel+dB", 
-                   "~Trial+Diel+Treatment", "~Trial+Temp+dB", "~Trial+Temp+Treatment", 
-                   "~Trial+dB*Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
-                   "~Pond+Diel+Treatment", "~Pond+Temp+dB", "~Pond+Temp+Treatment", 
-                   "~Pond+dB*Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
-                   "~Diel+dB*Treatment", "~Temp+dB*Treatment")
-    }else if (nCov == 4){
-        names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
-                   "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db*Treatment",
-                   "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", "~Trial+Diel+dB*Treatment",
-                   "~Trial+Temp+dB*Treatment", "~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
-                   "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
-    }else if (nCov == 5){
-        names <- c("~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
-                   "~Trial+Pond+Diel+dB*Treatment", "~Trial+Pond+Temp+dB*Treatment",
-                   "~Trial+Diel+Temp+dB*Treatment", "~Pond+Diel+Temp+dB*Treatment")
-    }else if (nCov == 6){
-        names <- c("~Trial+Pond+Diel+Temp+dB*Treatment")
+    if (!(include_diel) & nCov == 6){
+        stop("Set include_diel to TRUE if you want formulas with 6 covariates.")
     }
     
-    form_list <- list()
+    if (include_diel){
+        if (nCov == 0){
+            names <- c("~1")
+        }else if (nCov == 1){
+            names <- c("~Trial", "~Pond", "~Diel", "~Temp", "~dB", "~Treatment")
+        }else if (nCov == 2){
+            names <- c("~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
+                       "~Trial+Treatment", "~Pond+Diel", "~Pond+Temp", "~Pond+dB", "~Pond+Treatment", 
+                       "~Diel+Temp", "~Diel+dB", "~Diel+Treatment", "~Temp+dB", "~Temp+Treatment", 
+                       "~dB*Treatment")
+        }else if (nCov == 3){
+            names <- c("~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
+                       "~Trial+Pond+Treatment", "~Trial+Diel+Temp", "~Trial+Diel+dB", 
+                       "~Trial+Diel+Treatment", "~Trial+Temp+dB", "~Trial+Temp+Treatment", 
+                       "~Trial+dB*Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
+                       "~Pond+Diel+Treatment", "~Pond+Temp+dB", "~Pond+Temp+Treatment", 
+                       "~Pond+dB*Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
+                       "~Diel+dB*Treatment", "~Temp+dB*Treatment")
+        }else if (nCov == 4){
+            names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
+                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db*Treatment",
+                       "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", "~Trial+Diel+dB*Treatment",
+                       "~Trial+Temp+dB*Treatment", "~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
+                       "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
+        }else if (nCov == 5){
+            names <- c("~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
+                       "~Trial+Pond+Diel+dB*Treatment", "~Trial+Pond+Temp+dB*Treatment",
+                       "~Trial+Diel+Temp+dB*Treatment", "~Pond+Diel+Temp+dB*Treatment")
+        }else if (nCov == 6){
+            names <- c("~Trial+Pond+Diel+Temp+dB*Treatment")
+        }
+        
+        form_list <- list()
+        
+        for (i in 1:length(names)){
+            form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
+        }
+    }
     
-    for (i in 1:length(names)){
-        form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
+    if (!(include_diel)){
+        if (nCov == 0){
+            names <- c("~1")
+        }else if (nCov == 1){
+            names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
+        }else if (nCov == 2){
+            names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
+                       "~Pond+dB", "~Pond+Treatment", "Temp+dB", "~Temp+Treatment", "dB*Treatment")
+        }else if (nCov == 3){
+            names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
+                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "Trial+dB*Treatment", 
+                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "Pond+dB*Treatment", 
+                       "~Temp+dB*Treatment")
+        }else if (nCov == 4){
+            names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
+                       "~Trial+Pond+db*Treatment", "~Trial+Temp+dB*Treatment", 
+                       "~Pond+Temp+dB*Treatment")
+        }else if (nCov == 5){
+            names <- c("~Trial+Pond+Temp+dB*Treatment")
+        }
+        
+        form_list <- list()
+        
+        for (i in 1:length(names)){
+            form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
+        }
     }
 
     return(form_list)
