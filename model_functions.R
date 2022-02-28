@@ -725,12 +725,12 @@ fit.model.list <- function(list_element){
 }
 
 ## multiprocessing
-# for (i in c(0)){
+# for (i in c(0, 1, 2, 3, 4, 5)){
 #   frm <- get.formulas(i)
 #   
 #   frm_list <- list()
 #   for (j in 1:length(frm)){
-#     frm_list[[j]] <- list("formula"=frm[i], "data"=rep)
+#     frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
 #   }
 #   
 #   cl <- makeCluster(i)
@@ -738,12 +738,12 @@ fit.model.list <- function(list_element){
 #   clusterEvalQ(cl, library(momentuHMM))
 #   
 #   tic = Sys.time()
-#   parLapplyLB(cl, f_list, fit.model.list)
+#   hmm <- parLapplyLB(cl, f_list, fit.model.list)
 #   toc = Sys.time()
 #   print(paste0("Fitting models with ", i, " covariates is complete."))
 #   print(toc - tic)
 #   
-#   saveRDS("~/Carp-Model/Fitted HMMs/Repetition 10/", i, " covariates.RDS")
+#   saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition 10/", i, " covariates.RDS"))
 #   stopCluster(cl)
 # }
 
