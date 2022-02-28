@@ -725,31 +725,26 @@ fit.model.list <- function(list_element){
 }
 
 ## multiprocessing
-# times <- c()
-# lb_times <- c()
-# 
-# for (i in 1:10){
-#     cl <- makeCluster(i)
-#     clusterExport(cl, c("fit.model.list", "fit.model"))
-#     clusterEvalQ(cl, library(momentuHMM))
-#     
-#     # parLapply block
-#     tic = Sys.time()
-#     parLapply(cl, f_list, fit.model.list)
-#     toc = Sys.time()
-#     times[[i]] <- as.numeric(toc - tic)
-#     print(paste0("Applying parLapply on cluster of ", i, " nodes:"))
-#     print(toc - tic)
-#     
-#     #parLapplyLB (load balancing) block
-#     tic = Sys.time()
-#     parLapplyLB(cl, f_list, fit.model.list)
-#     toc = Sys.time()
-#     lb_times[[i]] <- as.numeric(toc - tic)
-#     print(paste0("Applying parLapplyLB on cluster of ", i, " nodes:"))
-#     print(toc - tic)
-#     
-#     stopCluster(cl)
+# for (i in c(0)){
+#   frm <- get.formulas(i)
+#   
+#   frm_list <- list()
+#   for (j in 1:length(frm)){
+#     frm_list[[j]] <- list("formula"=frm[i], "data"=rep)
+#   }
+#   
+#   cl <- makeCluster(i)
+#   clusterExport(cl, c("fit.model.list", "fit.model"))
+#   clusterEvalQ(cl, library(momentuHMM))
+#   
+#   tic = Sys.time()
+#   parLapplyLB(cl, f_list, fit.model.list)
+#   toc = Sys.time()
+#   print(paste0("Fitting models with ", i, " covariates is complete."))
+#   print(toc - tic)
+#   
+#   saveRDS("~/Carp-Model/Fitted HMMs/Repetition 10/", i, " covariates.RDS")
+#   stopCluster(cl)
 # }
 
 ##### this code generates maps centered in the middle of the ponds
