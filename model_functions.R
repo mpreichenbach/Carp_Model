@@ -66,18 +66,18 @@ convert.coords <- function(df,
 }
 
 
-fit.krig <- function(sound_data, new_data, 
+fit.krig <- function(sound_data, pred_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
     # x, y, and dB.
     
     sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
-    sp_new_data <- SpatialPoints(new_data, proj4string = CRS(crs_string))
+    sp_new_data <- SpatialPoints(pred_data, proj4string = CRS(crs_string))
     
     fit_KRIG <- automap::autoKrige(
         formula = dB ~ 1,
         input_data = as(sf_sound, "Spatial"),
-        new_data = sp_new_data
+        pred_data = sp_new_data
     ) %>%
         .$krige_output %>%
         as.data.frame() %>%
