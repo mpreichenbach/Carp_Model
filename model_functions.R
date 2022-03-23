@@ -864,3 +864,163 @@ fit.model.list <- function(list_element){
 #     }
 #     saveRDS(df, file = paste0("~/Carp-Model/Fitted CRWs/", "Repetition ", i, "(Day ", day_val, substr(on_dt, 12, 13), "00).RDS"))
 # }
+
+##### interpolation script
+# We will need some packages for (spatial) data processing
+# library(tidyverse) # wrangling tabular data and plotting
+# library(sf) # processing spatial vector data
+# library(sp) # another vector data package necessary for continuity
+# library(raster) # processing spatial raster data. !!!overwrites dplyr::select!!!
+# 
+# # And a lot of different packages to test their interpolation functions
+# library(gstat)  # inverse distance weighted, Kriging
+# library(fields) # Thin Plate Spline
+# library(interp) # Triangulation
+# library(mgcv)   # Spatial GAM
+# library(automap)# Automatic approach to Kriging
+# 
+# # Finally, some packages to make pretty plots
+# library(patchwork)
+# library(viridis)
+# 
+# crs_string <- "+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"
+# 
+# pts_sound <- readr::read_csv(
+#     "~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/Pond31BoatMotor.csv",
+#     col_types = cols(dB = col_double(), 
+#                      x = col_double(), y = col_double())
+# ) %>% 
+#     dplyr::select(x, y, dB)
+# 
+# bbox <- c(
+#     "xmin" = min(pts_sound$x),
+#     "ymin" = min(pts_sound$y),
+#     "xmax" = max(pts_sound$x),
+#     "ymax" = max(pts_sound$y)
+# )
+# 
+# grd_template <- expand.grid(
+#     x = seq(from = bbox["xmin"], to = bbox["xmax"], by = 0.05),
+#     y = seq(from = bbox["ymin"], to = bbox["ymax"], by = 0.05) # 0.05 m resolution
+# )
+# 
+# sf_sound <- st_as_sf(pts_sound, coords = c("x", "y"), crs = crs_string)
+# 
+# alt_grd_template_sf <- sf_sound %>% 
+#     st_bbox() %>% 
+#     st_as_sfc() %>% 
+#     st_make_grid(
+#         cellsize = c(0.05, 0.05),
+#         what = "centers"
+#     ) %>%
+#     st_as_sf() %>%
+#     cbind(., st_coordinates(.)) %>% 
+#     st_drop_geometry() %>% 
+#     mutate(dB = 0)
+# 
+# colnames(alt_grd_template_sf) <- c("x", "y",)
+# 
+# grd_template_raster <- grd_template %>% 
+#     dplyr::mutate(dB = 0) %>% 
+#     raster::rasterFromXYZ( 
+#         crs = crs_string)
+# 
+# alt_grd_template_raster <- alt_grd_template_sf %>% 
+#     raster::rasterFromXYZ(
+#         crs = crs_string
+#     )
+# 
+# fit_IDW <- gstat::gstat( # The setup here is quite similar to NN
+#     formula = dB ~ 1,
+#     data = as(sf_sound, "Spatial"),
+#     nmax = 20, nmin = 3,
+#     set = list(idp = 0.5) # inverse distance power
+# )
+# 
+# fit_NN <- gstat::gstat( # using package {gstat} 
+#     formula = dB ~ 1,    # The column `NH4` is what we are interested in
+#     data = as(sf_sound, "Spatial"), # using {sf} and converting to {sp}, which is expected
+#     nmax = 20, nmin = 3 # Number of neighboring observations used for the fit
+# )
+# 
+# fit_TPS <- fields::Tps( # using {fields}
+#     x = as.matrix(pts_sound[, c("x", "y")]), # accepts points but expects them as matrix
+#     Y = pts_sound$dB,  # the dependent variable
+#     miles = FALSE     # EPSG 25833 is based in meters
+# )
+# 
+# fit_GAM <- mgcv::gam( # using {mgcv}
+#     dB ~ s(x, y),      # here come our X/Y/Z data - straightforward enough
+#     data = pts_sound      # specify in which object the data is stored
+# )
+# 
+# fit_TIN <- interp::interp( # using {interp}
+#     x = pts_sound$x,           # the function actually accepts coordinate vectors
+#     y = pts_sound$y,
+#     z = pts_sound$dB,
+#     xo = grd_template$x,     # here we already define the target grid
+#     yo = grd_template$y,
+#     output = "points"
+# ) %>% bind_cols()
+# 
+# sp_new_data <- SpatialPoints(alt_grd_template_sf, proj4string = CRS(crs_string))
+# 
+# fit_KRIG <- automap::autoKrige(
+#     formula = dB ~ 1,
+#     input_data = as(sf_sound, "Spatial"),
+#     new_data = sp_new_data
+# ) %>%
+#     .$krige_output %>%
+#     as.data.frame() %>%
+#     dplyr::select(x, y, dB = var1.pred)
+# 
+# interp_TIN <- raster::rasterFromXYZ(fit_TIN, crs = crs_string)
+# 
+# interp_KRIG <- raster::rasterFromXYZ(fit_KRIG, crs = crs_string)
+# 
+# interp_NN <- interpolate(grd_template_raster, fit_NN)
+# 
+# interp_IDW <- interpolate(grd_template_raster, fit_IDW)
+# 
+# interp_TPS <- interpolate(grd_template_raster, fit_TPS)
+# 
+# interp_GAM <- grd_template %>% 
+#     mutate(dB = predict(fit_GAM, .)) %>% 
+#     rasterFromXYZ(crs = crs_string)
+# 
+# plot_my_rasters <- function(raster_object, raster_name){
+#     
+#     df <- rasterToPoints(raster_object) %>% as_tibble()
+#     colnames(df) <- c("X", "Y", "Z")
+#     
+#     ggplot(df, aes(x = X, y = Y, fill = Z)) +
+#         geom_raster() +
+#         ggtitle(label = raster_name) +
+#         scale_fill_viridis(option = "C") +
+#         theme_bw() +
+#         theme(
+#             axis.text = element_blank(),
+#             axis.title = element_blank(),
+#             axis.ticks = element_blank()
+#         )
+# }
+# 
+# rasterlist <- list(
+#     "Nearest Neighbor" = interp_NN, 
+#     "Inverse Distance Weighted" = interp_IDW, 
+#     "Kriging" = interp_KRIG, 
+#     "Thin Plate Spline Regression" = interp_TPS,
+#     "Triangular Irregular Surface" = interp_TIN, 
+#     "Generalized Additive Model" = interp_GAM
+# )
+# 
+# plotlist <- map2(
+#     rasterlist,
+#     names(rasterlist),
+#     plot_my_rasters
+# )
+# 
+# # Note that the next trick only works because of library(patchwork)
+# (plotlist[[1]] + plotlist[[2]]) /
+#     (plotlist[[3]] + plotlist[[4]]) /
+#     (plotlist[[5]] + plotlist[[6]])
