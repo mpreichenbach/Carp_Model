@@ -1020,3 +1020,34 @@ fit.model.list <- function(list_element){
 # (plotlist[[1]] + plotlist[[2]]) /
 #     (plotlist[[3]] + plotlist[[4]]) /
 #     (plotlist[[5]] + plotlist[[6]])
+
+##### this code sorts the by-trial-and-pond telemetry files into the hour containing a sound rep
+ba_interval <- 1800
+sound_data <- sound.data()
+sound_data <- sound_data[sound_data$Sound == "ON",]
+rep_times <- as.data.frame(unique(sound_data$locTimes))
+rep_times$Repetition <- ((as.numeric(row.names(rep_times)) - 1) %% 24) + 1
+
+pd_path <- "D:/Carp-Model/Processed Telemetry Data/"
+
+files <- setdiff(list.files(pd_path),
+                 list.dirs(pd_path, recursive=FALSE, full.names=FALSE))
+
+for (trial in c(1, 2, 3, 4, 5)){
+    trial_files <- grep(paste0("Trial_", trial), files, value=TRUE)
+    trial_merge <- do.call(rbind,
+                           lapply(trial_files, readRDS))
+    
+    for (j in 1:length(rep_times$locTimes)){
+        rep_time <- rep_times$locTimes[j]
+        repetition <- rep_times$Repetition[j]
+        
+        rep_subset <- trial_merge[(rep_time - ba_interval <= trial_merge$DT) &
+                                      (trial_merge$DT <= rep_time + ba_interval),
+                                  c("DT", "Easting", "Northing", "ID", "Sound", "Diel", "Temp",
+                                    "Trial", "Pond")]
+        rep_subset$Repetition <- repetition
+        saveRDS(rep_subset, paste0(pd_path, "Hour of sound-on times/Repetition ", j, 
+                                   "Trial ", trial, ".RDS"))
+    }
+}
