@@ -1035,12 +1035,17 @@ files <- setdiff(list.files(pd_path),
 
 for (trial in c(1, 2, 3, 4, 5)){
     trial_files <- grep(paste0("Trial_", trial), files, value=TRUE)
+    trial_files_full <- paste0(pd_path, trial_files)
     trial_merge <- do.call(rbind,
-                           lapply(trial_files, readRDS))
+                           lapply(trial_files_full, readRDS))
+    
+    print(paste0("Trial ", trial))
     
     for (j in 1:length(rep_times$locTimes)){
         rep_time <- rep_times$locTimes[j]
         repetition <- rep_times$Repetition[j]
+        
+        print(repetition)
         
         rep_subset <- trial_merge[(rep_time - ba_interval <= trial_merge$DT) &
                                       (trial_merge$DT <= rep_time + ba_interval),
