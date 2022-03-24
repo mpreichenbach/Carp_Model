@@ -1027,6 +1027,7 @@ sound_data <- sound.data()
 sound_data <- sound_data[sound_data$Sound == "ON",]
 rep_times <- as.data.frame(unique(sound_data$locTimes))
 rep_times$Repetition <- ((as.numeric(row.names(rep_times)) - 1) %% 24) + 1
+colnames(rep_times) <- c("DT", "Repetition")
 
 pd_path <- "D:/Carp-Model/Processed Telemetry Data/"
 
@@ -1041,10 +1042,11 @@ for (trial in c(1, 2, 3, 4, 5)){
     
     print(paste0("Trial ", trial))
     
-    for (j in 1:length(rep_times$locTimes)){
-        rep_time <- rep_times$locTimes[j]
-        repetition <- rep_times$Repetition[j]
+    for (j in 1:24){
+        rep_time <- rep_times$DT[(24 * (trial - 1)) + j]
+        repetition <- rep_times$Repetition[((24 * (trial - 1)) + j)]
         
+        print(rep_time)
         print(repetition)
         
         rep_subset <- trial_merge[(rep_time - ba_interval <= trial_merge$DT) &
@@ -1053,6 +1055,6 @@ for (trial in c(1, 2, 3, 4, 5)){
                                     "Trial", "Pond")]
         rep_subset$Repetition <- repetition
         saveRDS(rep_subset, paste0(pd_path, "Hour of sound-on times/Repetition ", j, 
-                                   "Trial ", trial, ".RDS"))
+                                   " Trial ", trial, ".RDS"))
     }
 }
