@@ -149,7 +149,6 @@ fit.crw <- function(telemetry, on_time, timestep="6 sec", inits=c(2, 0.001),  re
     
     #subset dataset to just time before and after specified time interval
     crawldat <- subset(telemetry, !is.na(Easting))
-    crawldat$OnDT <- on_time
 
     rawdat <- crawldat0[, c("ID","Easting","Northing","Time")]
     colnames(rawdat)<-c('ID','x','y','Time')
