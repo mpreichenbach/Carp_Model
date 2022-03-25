@@ -496,21 +496,24 @@ sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str
     # keeps unrounded values. Returns a dataframe ordered by local times.
     
     SoundDat <- read.csv(file.path(path, "Master_Sound_Tag_20200925.csv"), stringsAsFactors=FALSE)
+    SoundDat[SoundDat$Sound=="ON ", c("Sound")] <- "ON"
+    SoundDat <- SoundDat[SoundDat$Sound == "ON",]
     
-    colnames(SoundDat)[1] <- 'Trial'
     SoundDat$DT <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
-    SoundDat$locTimes <- as.POSIXct(SoundDat$DT, format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
-
-    SoundDat <- SoundDat %>% relocate(locTimes, .after = 'Pond')
-    SoundDat$DT <- NULL
-    SoundDat$Sound[SoundDat$Sound=="ON "] <- "ON"
-    SoundDat <- SoundDat[order(SoundDat$locTimes),]
-    
+    SoundDat$DT <- as.POSIXct(SoundDat$DT, format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
     if (typeof(round_str) == "character"){
-        SoundDat$locTimes <- round_date(SoundDat$locTimes, round_str)
+        SoundDat$DT <- round_date(SoundDat$DT, round_str)
     }
+
+    unique_times <- unique(SoundDat$DT)
+    df <- data.frame(matrix(nrow=length(unique_times), ncol=2, 
+                            dimnames=list(1:length(unique_times), c("DT", "Repetition"))))
     
-    return(SoundDat)
+
+    df$DT <- unique_times[order(unique_times)]
+    df$Repetition <- (((as.numeric(row.names(df)) - 1) %% 24) + 1)
+    
+    return(df)
 }
 
 
