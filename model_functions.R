@@ -142,31 +142,15 @@ correct.tags <- function(trial, pond){
 }
 
 
-fit.crw <- function(telemetry, trial, pond, on_time, seconds_ba, timestep="6 sec", 
-                    inits=c(2, 0.001), attempts = 100, retry_fits=100, doParallel = TRUE,
-                    ncores = ceiling(0.75 * detectCores())){
+fit.crw <- function(telemetry, on_time, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
+                    doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
-    if (hour(on_time) == 0 & minute(on_time) == 0){
-        sound_time_str <-paste(as.character(on_time), "00_00_00")
-    }else{
-        sound_time_str <- str_replace_all(as.character(on_time), ":", "_")
-    }
-    
-    # store sound treatment for the particular trial and pond
-    treatment <- treatment.key(trial=trial, pond=pond)
-    
-    # load processed telemetry data
-    telemetry$Treatment <- treatment
-    telemetry$Time <- telemetry$DT
-    # telemetry$DT <- NULL
-    
-    #Now subset dataset to just time before and after specified time interval
-    crawldat0 <- subset(telemetry, !is.na(Easting))
-    crawldat0$OnDT <- on_time
-    crawldat0 <- subset(crawldat0, (Time>=OnDT-seconds_ba) & (Time<=OnDT+seconds_ba))
-    
+    #subset dataset to just time before and after specified time interval
+    crawldat <- subset(telemetry, !is.na(Easting))
+    crawldat$OnDT <- on_time
+
     rawdat <- crawldat0[, c("ID","Easting","Northing","Time")]
     colnames(rawdat)<-c('ID','x','y','Time')
 
@@ -1026,7 +1010,7 @@ fit.model.list <- function(list_element){
 # sound_data <- sound.data()
 # sound_data <- sound_data[sound_data$Sound == "ON",]
 # rep_times <- as.data.frame(unique(sound_data$locTimes))
-# rep_times$Repetition <- ((as.numeric(row.names(rep_times)) - 1) %% 24) + 1
+# rep_times$Repetition <- ((as.numeric(row.names(rep_times)) - 1) %% 24) + 1=
 # colnames(rep_times) <- c("DT", "Repetition")
 # 
 # pd_path <- "D:/Carp-Model/Processed Telemetry Data/"
