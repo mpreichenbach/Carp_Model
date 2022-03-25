@@ -499,18 +499,18 @@ sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str
     SoundDat[SoundDat$Sound=="ON ", c("Sound")] <- "ON"
     SoundDat <- SoundDat[SoundDat$Sound == "ON",]
     
-    SoundDat$DT <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
-    SoundDat$DT <- as.POSIXct(SoundDat$DT, format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
+    SoundDat$Time <- paste(SoundDat$DOY, SoundDat$LocalTime..CT.)
+    SoundDat$Time <- as.POSIXct(SoundDat$Time, format="%m/%d/%Y %H:%M:%S", tz = "America/Chicago")
     if (typeof(round_str) == "character"){
-        SoundDat$DT <- round_date(SoundDat$DT, round_str)
+        SoundDat$Time <- round_date(SoundDat$Time, round_str)
     }
 
-    unique_times <- unique(SoundDat$DT)
+    unique_times <- unique(SoundDat$Time)
     df <- data.frame(matrix(nrow=length(unique_times), ncol=2, 
-                            dimnames=list(1:length(unique_times), c("DT", "Repetition"))))
+                            dimnames=list(1:length(unique_times), c("Time", "Repetition"))))
     
 
-    df$DT <- unique_times[order(unique_times)]
+    df$Time <- unique_times[order(unique_times)]
     df$Repetition <- (((as.numeric(row.names(df)) - 1) %% 24) + 1)
     
     return(df)
