@@ -142,7 +142,7 @@ correct.tags <- function(trial, pond){
 }
 
 
-fit.crw <- function(telemetry, on_time, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
+fit.crw <- function(telemetry, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
                     attempts=100, doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
