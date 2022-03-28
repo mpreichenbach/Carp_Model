@@ -1051,3 +1051,39 @@ fit.model.list <- function(list_element){
 #                            Hour of sound-on times/Repetition ", i, ".rds"))
 #     print(i)
 # }
+
+##### this code adds daily mean temperatures to the repetition files
+# temp_data <- temperature.data()
+# temp_data$DOY <- substr(as.character(temp_data$DT), 1, 10)
+# telemetry_path <- "D:/Carp-Model/Processed Telemetry Data/Hour of Sound-on Times/"
+# files <- list.files(telemetry_path)
+# for (file in files){
+#     rep_data <- readRDS(paste0(telemetry_path, file))
+#     rep_data$DOY <- substr(as.character(rep_data$Time), 1, 10)
+#     rep_data$Temp <- 0
+#     print(file)
+#     for (trial in c(1, 2, 3, 4, 5)){
+#         for (pond in c(26, 27, 30, 31)){
+#             dates <- unique(rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "DOY"])
+#             for (date_str in dates){
+#                 mean_temp <- mean(temp_data[(temp_data$Pond == pond) & (temp_data$Trial == trial)
+#                                             & (temp_data$DOY == date_str), 
+#                                             "Temp_C"])
+#                 rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "Temp"] <- mean_temp
+#                 print(paste("Trial", trial, "Pond", pond, "Temp", mean_temp))
+#             }
+#         }
+#     }
+#     rep_data$DOY <- NULL
+#     saveRDS(rep_data, paste0("D:/Carp-Model/Processed Telemetry Data/added temp/", file))
+#     print("Temperature merge complete.")
+# }
+
+
+
+
+
+
+
+
+
