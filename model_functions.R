@@ -630,7 +630,7 @@ treatment.key <- function(trial, pond){
 }
 
 fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list(step = "gamma", angle = "vm"),
-                      initPar = list(step = c(2, 1, 2, 1), angle = c(0.004, 0.004, 0.002, 0.002)),
+                      initPar = list(step = c(2, 1, 1, 1), angle = c(0, 0, 0, 0)),
                       modelFormula = ~ Trial + Pond + Diel + Temp + db * Treatment){
     
     # this ensures that covariate columns have the correct numeric/factor types
@@ -648,9 +648,13 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
     
     # this logic takes adds zeromass parameters, if 0 exists as a step-length in the data
     has_zero_step <- (0 %in% df$step)
-    if (has_zero_step){initPar$step <- c(2, 1, 2, 1, 0, 0)}
-    print(has_zero_step)
-    
+    if (has_zero_step){
+        zero_proportion <- length(which(df$step == 0)) / nrow(df)
+        for (state in 1:length(stateNames)){
+            initPar <- append(initPar, zero_proportion)
+        }
+    }
+
     # this section fits an initial movement model to give better starting values when fitting the full HMM.
     
     m1 <- fitHMM(data = df, 
