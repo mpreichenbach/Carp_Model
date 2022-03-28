@@ -630,10 +630,10 @@ treatment.key <- function(trial, pond){
 }
 
 fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list(step = "gamma", angle = "vm"),
-                      initPar = list(step = c(2, 1, 2, 1, 0, 0), angle = c(0.004, 0.004, 0.002, 0.002)),
+                      initPar = list(step = c(2, 1, 2, 1), angle = c(0.004, 0.004, 0.002, 0.002)),
                       modelFormula = ~ Trial + Pond + Diel + Temp + db * Treatment){
     
-    # this section ensures that covariate columns have the correct numeric/factor types
+    # this ensures that covariate columns have the correct numeric/factor types
     
     df <- within(df, {
         Trial <- as.factor(Trial)
@@ -646,6 +646,11 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
         Dist2SPK <- as.numeric(Dist2SPK)
     })
     
+    # this logic takes adds zeromass parameters, if 0 exists as a step-length in the data
+    has_zero_step <- (0 %in% df$step)
+    if (has_zero_step){initPar$step <- c(2, 1, 2, 1, 0, 0)}
+    print(has_zero_step)
+    
     # this section fits an initial movement model to give better starting values when fitting the full HMM.
     
     m1 <- fitHMM(data = df, 
@@ -654,9 +659,6 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
                  Par0 = initPar,
                  estAngleMean = list(angle=TRUE),
                  stateNames = stateNames)
-    
-    # estimates the states for each observation
-    m1$data$states <- viterbi(m1)
     
     print("Finished fitting movement model (step 1/3).")
     
@@ -672,8 +674,10 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
                  beta0 = initPar1$beta,
                  formula = modelFormula)
     
-    DM <- list(step = list(mean = modelFormula, sd = ~ 1, zeromass = ~ 1),
+    DM <- list(step = list(mean = modelFormula, sd = ~ 1),
                angle = list(mean = modelFormula, concentration = ~ 1))
+    
+    if (has_zero_step){DM$step$zeromass <- ~1}
     
     print("Finished fitting model for estimating initial transition probabilities (step 2/3).")
     
@@ -692,17 +696,16 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
                       formula = modelFormula)
     
     print("Finished fitting full model (step 3/3).")
-    
+
     return(FullMod)
 }
-
 
 fit.model.list <- function(list_element){
     # this runs fit.model, but with a single element so that it can be entered as an argument in 
     # parallel::mclapply().
     
     hmm <- fit.model(list_element$data, stateNames=c("exploratory", "encamped"), dist=list(step="gamma", angle="vm"),
-                            initPar=list(step=c(2, 1, 2, 1, 0, 0), angle=c(0.004, 0.004, 0.002, 0.002)),
+                            initPar=list(step=c(2, 1, 2, 1), angle=c(0.004, 0.004, 0.002, 0.002)),
                             modelFormula=list_element$formula)
     
     return(hmm)
@@ -1059,22 +1062,22 @@ fit.model.list <- function(list_element){
 # files <- list.files(telemetry_path)
 # for (file in files){
 #     rep_data <- readRDS(paste0(telemetry_path, file))
-#     rep_data$DOY <- substr(as.character(rep_data$Time), 1, 10)
-#     rep_data$Temp <- 0
-#     print(file)
-#     for (trial in c(1, 2, 3, 4, 5)){
-#         for (pond in c(26, 27, 30, 31)){
-#             dates <- unique(rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "DOY"])
-#             for (date_str in dates){
-#                 mean_temp <- mean(temp_data[(temp_data$Pond == pond) & (temp_data$Trial == trial)
-#                                             & (temp_data$DOY == date_str), 
-#                                             "Temp_C"])
-#                 rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "Temp"] <- mean_temp
-#                 print(paste("Trial", trial, "Pond", pond, "Temp", mean_temp))
-#             }
-#         }
-#     }
-#     rep_data$DOY <- NULL
+    # rep_data$DOY <- substr(as.character(rep_data$Time), 1, 10)
+    # rep_data$Temp <- 0
+    # print(file)
+    # for (trial in c(1, 2, 3, 4, 5)){
+    #     for (pond in c(26, 27, 30, 31)){
+    #         dates <- unique(rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "DOY"])
+    #         for (date_str in dates){
+    #             mean_temp <- mean(temp_data[(temp_data$Pond == pond) & (temp_data$Trial == trial)
+    #                                         & (temp_data$DOY == date_str),
+    #                                         "Temp_C"])
+    #             rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "Temp"] <- mean_temp
+    #             print(paste("Trial", trial, "Pond", pond, "Temp", mean_temp))
+    #         }
+    #     }
+    # }
+    # rep_data$DOY <- NULL
 #     saveRDS(rep_data, paste0("D:/Carp-Model/Processed Telemetry Data/added temp/", file))
 #     print("Temperature merge complete.")
 # }
