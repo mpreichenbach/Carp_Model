@@ -143,7 +143,7 @@ correct.tags <- function(trial, pond){
 
 
 fit.crw <- function(telemetry, on_time, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
-                    doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
+                    attempts=100, doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
@@ -156,7 +156,7 @@ fit.crw <- function(telemetry, on_time, timestep="6 sec", inits=c(2, 0.001),  re
     #Fit the correlated random walk Model
     tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
                           theta=inits, fixPar=c(NA, NA), Time.name = "Time", retryFits = retry_fits,
-                          doParallel = doParallel, ncores = ncores)
+                          attempts=attempts, doParallel = doParallel, ncores = ncores)
     
     # only keep the necessary covariates
     covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
