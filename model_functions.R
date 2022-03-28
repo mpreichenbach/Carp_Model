@@ -693,9 +693,7 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
     
     print("Finished fitting full model (step 3/3).")
     
-    out_list <- list(m1 = m1, m2 = m2, FullMod = FullMod)
-    
-    return(out_list)
+    return(FullMod)
 }
 
 
