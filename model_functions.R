@@ -739,54 +739,41 @@ fit.model.list <- function(list_element){
 #   stopCluster(cl)
 # }
 
-##### this code generates maps centered in the middle of the ponds
-# for (pond in c(26, 27, 30, 31)){
-#     bnd <- subset(pond_locations$boundary, Pond == pond)
-#     center <- c((min(bnd$x) + max(bnd$x)) / 2, (min(bnd$y) + max(bnd$y)) / 2)
-#     center_utm <- as.data.frame(t(center))
-#     colnames(center_utm) <- c("x", "y")
-#     coordinates(center_utm) <- ~x + y
-#     proj4string(center_utm) <- CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84")
-#     center_ll <- spTransform(center_utm, CRS("+proj=longlat +datum=WGS84"))
-# 
-#     long <- center_ll$x
-#     lat <- center_ll$y
-# 
-#     name <- paste("Pond_", pond)
-#     plt <- get_googlemap(center = c(long, lat), zoom = 20, scale = 2, maptype = "satellite")
-#     saveRDS(plt, file.path("~/Carp-Model/Supplementary Files/Pond Maps", paste0(name, ".RDS")))
-# }
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
-# trials <- c(1, 2, 3, 4, 5)
-# for (trial in trials){
-#     files0 <- list.files(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial))
-#     for (i in 1:length(files0)){
-#         file0 <- files0[i]
-#         files1 <- list.files(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0))
-#         for (j in 1:length(files1)){
-#             file1 <- files1[j]
-#             print(file1)
-#             load(paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0, "/", file1))
-#             pond <- strtoi(substr(file1, 18, 19))
-#             if (unique(ModDat$Treatment) == "Control"){
-#                 next
-#             }else if (unique(ModDat$Treatment) == "ChirpSaw"){
-#                 sound <- "Saw"
-#             }else if (unique(ModDat$Treatment) == "ChirpSquare"){
-#                 sound <- "Square"
-#             }else if (unique(ModDat$Treatment) == "BoatMotor"){
-#                 sound <- "BoatMotor"
-#             }
-#             sound_data <- read.csv(paste0("~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/Pond", pond, sound, ".csv"))
-#             krig <- fit.krig(sound_data=sound_data, new_data=as.data.frame(ModDat[, c("x", "y")]))
-#             ModDat$dB <- krig$dB
-#             ModDat$dB[ModDat$Sound == 0] <- 0
-#             save(ModDat, file=paste0("~/Carp-Model/Fitted CRWs/Trial ", trial, "/", file0, "/", file1))
-#         }
-#     }
-#}
+for (n_rep in 1:24){
+    tic <- Sys.time()
+    print(paste("Repetition", n_rep))
+    rep <- readRDS(paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/Repetition ", n_rep, ".rds"))
+    rep$HMS <- format(rep$Time, format="%H:%M:%S")
+    on_time <- format(sound_times[n_rep, "Time"], format="%H:%M:%S")
+    rep$dB <- 0
+    for (trial in c(1, 2, 3, 4, 5)){
+        for (pond in c(26, 27, 30, 31)){
+            tmnt <- treatment.key(trial, pond)
+            if (tmnt == "Control"){
+                next
+            }
+            sm_name <- paste0("Pond", pond, tmnt)
+            sound_data <- read.csv(paste0("~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/", sm_name, ".csv"))
 
+            rep_sub <- rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time,]
+            if (nrow(rep_sub) == 0){
+                print(paste0("Repetition ", n_rep, " Trial ", trial, " Pond ", pond, " has no data."))
+                next
+            }
+            rep[rep$Trial == trial & rep$Pond == pond, "Treatment"] <- tmnt
+            rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "dB"] <- fit.krig(sound_data, rep_sub[, c("x", "y")])$dB
+            rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "Sound"] <- 1
+        }
+    }
+    rep$HMS <- NULL
+    saveRDS(rep, paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/holder/Repetition ", n_rep, ".rds"))
+    toc <- Sys.time()
+    print(toc - tic)
+}
+
+##### This code adds day/night (diel) info to the fitted CRWs
 # trials <- c(1, 2, 3, 4, 5)
 # path <- '~/Carp-Model/Fitted CRWs'
 # for (trial in trials){
@@ -815,7 +802,7 @@ fit.model.list <- function(list_element){
 #             # SunRS[,2] <- as.POSIXct(SunRS[,2], origin="1970-01-01", tz = "America/Chicago")
 #             # SunRS$Date <- as.Date(SunRS[,1])
 #             #
-#             # # Day is 0, night is 1
+#             # # Day is 1, night is 0
 #             # for(j in 1:(nrow(SunRS)-1)){
 #             #     ModDat$Diel[(ModDat$Time >= SunRS$sunrise[j]) & (ModDat$Time < SunRS$sunset[j])] <- 1
 #             # }
