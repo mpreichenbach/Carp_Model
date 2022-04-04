@@ -198,26 +198,36 @@ get.formulas <- function(nCov, include_diel=FALSE){
             names <- c("~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
                        "~Trial+Treatment", "~Pond+Diel", "~Pond+Temp", "~Pond+dB", "~Pond+Treatment", 
                        "~Diel+Temp", "~Diel+dB", "~Diel+Treatment", "~Temp+dB", "~Temp+Treatment", 
-                       "~dB*Treatment")
+                       "~dB+Treatment", "~dB:Treatment")
         }else if (nCov == 3){
             names <- c("~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
                        "~Trial+Pond+Treatment", "~Trial+Diel+Temp", "~Trial+Diel+dB", 
                        "~Trial+Diel+Treatment", "~Trial+Temp+dB", "~Trial+Temp+Treatment", 
-                       "~Trial+dB*Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
+                       "~Trial+dB+Treatment", "Trial+dB:Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
                        "~Pond+Diel+Treatment", "~Pond+Temp+dB", "~Pond+Temp+Treatment", 
-                       "~Pond+dB*Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
-                       "~Diel+dB*Treatment", "~Temp+dB*Treatment")
+                       "~Pond+dB+Treatment", "~Pond+dB:Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
+                       "~Diel+dB+Treatment", "~Diel+dB:Treatment", "~Temp+dB+Treatment", "~Temp+dB:Treatment",
+                       "~dB*Treatment")
         }else if (nCov == 4){
             names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
-                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db*Treatment",
-                       "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", "~Trial+Diel+dB*Treatment",
-                       "~Trial+Temp+dB*Treatment", "~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
-                       "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
+                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db+Treatment",
+                       "~Trial+Pond+dB:Treatment", "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", 
+                       "~Trial+Diel+dB+Treatment", "~Trial+Diel+dB:Treatment", "~Trial+Temp+dB+Treatment", 
+                       "~Trial+Temp+dB:Treatment","~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
+                       "~Pond+Diel+dB+Treatment", "~Pond+Diel+dB:Treatment","~Pond+Temp+dB+Treatment", 
+                       "~Pond+Temp+dB:Treatment", "~Diel+Temp+dB+Treatment", "~Diel+Temp+dB:Treatment",
+                       "~Trial+dB*Treatment", "~Pond+dB*Treatment", "Diel+dB*Treatment", "~Temp+dB*Treatment")
         }else if (nCov == 5){
             names <- c("~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
-                       "~Trial+Pond+Diel+dB*Treatment", "~Trial+Pond+Temp+dB*Treatment",
-                       "~Trial+Diel+Temp+dB*Treatment", "~Pond+Diel+Temp+dB*Treatment")
+                       "~Trial+Pond+Diel+dB+Treatment", "~Trial+Pond+Diel+dB:Treatment", 
+                       "~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
+                       "~Trial+Diel+Temp+dB+Treatment", "Trial+Diel+Temp+dB:Treatment",
+                       "~Pond+Diel+Temp+dB+Treatment", "~Pond+Diel+Temp+dB:Treatment",
+                       "~Trial+Pond+dB*Treatment", "~Trial+Diel+dB*Treatment", "~Trial+Temp+dB*Temperature",
+                       "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
         }else if (nCov == 6){
+            names <- c("~Trial+Pond+Diel+Temp+dB+Treatment", "~Trial+Pond+Diel+Temp+dB:Treatment")
+        }else if (nCov == 7){
             names <- c("~Trial+Pond+Diel+Temp+dB*Treatment")
         }
         
