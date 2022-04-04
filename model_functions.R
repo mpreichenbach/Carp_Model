@@ -72,12 +72,12 @@ fit.krig <- function(sound_data, pred_data,
     # x, y, and dB.
     
     sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
-    sp_new_data <- SpatialPoints(pred_data, proj4string = CRS(crs_string))
+    sp_pred_data <- SpatialPoints(as.data.frame(pred_data), proj4string = CRS(crs_string))
     
     fit_KRIG <- automap::autoKrige(
         formula = dB ~ 1,
         input_data = as(sf_sound, "Spatial"),
-        pred_data = sp_new_data
+        new_data = sp_pred_data
     ) %>%
         .$krige_output %>%
         as.data.frame() %>%
@@ -1085,12 +1085,3 @@ fit.model.list <- function(list_element){
 #     saveRDS(rep_data, paste0("D:/Carp-Model/Processed Telemetry Data/added temp/", file))
 #     print("Temperature merge complete.")
 # }
-
-
-
-
-
-
-
-
-
