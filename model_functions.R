@@ -182,7 +182,7 @@ get.formulas <- function(nCov, include_diel=FALSE){
     # n-choose-k functionality to return all possible formulas with nCov covariates.
     
     if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))){
-        stop("nCov must be 0, 1, 2, 3, 4, or 5.")
+        stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
     }
     
     if (!(include_diel) & nCov == 6){
@@ -741,37 +741,37 @@ fit.model.list <- function(list_element){
 
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
-for (n_rep in 1:24){
-    tic <- Sys.time()
-    print(paste("Repetition", n_rep))
-    rep <- readRDS(paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/Repetition ", n_rep, ".rds"))
-    rep$HMS <- format(rep$Time, format="%H:%M:%S")
-    on_time <- format(sound_times[n_rep, "Time"], format="%H:%M:%S")
-    rep$dB <- 0
-    for (trial in c(1, 2, 3, 4, 5)){
-        for (pond in c(26, 27, 30, 31)){
-            tmnt <- treatment.key(trial, pond)
-            if (tmnt == "Control"){
-                next
-            }
-            sm_name <- paste0("Pond", pond, tmnt)
-            sound_data <- read.csv(paste0("~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/", sm_name, ".csv"))
-
-            rep_sub <- rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time,]
-            if (nrow(rep_sub) == 0){
-                print(paste0("Repetition ", n_rep, " Trial ", trial, " Pond ", pond, " has no data."))
-                next
-            }
-            rep[rep$Trial == trial & rep$Pond == pond, "Treatment"] <- tmnt
-            rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "dB"] <- fit.krig(sound_data, rep_sub[, c("x", "y")])$dB
-            rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "Sound"] <- 1
-        }
-    }
-    rep$HMS <- NULL
-    saveRDS(rep, paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/holder/Repetition ", n_rep, ".rds"))
-    toc <- Sys.time()
-    print(toc - tic)
-}
+# for (n_rep in 1:24){
+#     tic <- Sys.time()
+#     print(paste("Repetition", n_rep))
+#     rep <- readRDS(paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/Repetition ", n_rep, ".rds"))
+#     rep$HMS <- format(rep$Time, format="%H:%M:%S")
+#     on_time <- format(sound_times[n_rep, "Time"], format="%H:%M:%S")
+#     rep$dB <- 0
+#     for (trial in c(1, 2, 3, 4, 5)){
+#         for (pond in c(26, 27, 30, 31)){
+#             tmnt <- treatment.key(trial, pond)
+#             if (tmnt == "Control"){
+#                 next
+#             }
+#             sm_name <- paste0("Pond", pond, tmnt)
+#             sound_data <- read.csv(paste0("~/Carp-Model/Supplementary Files/Sound Mapping/UTM, Zone 15/", sm_name, ".csv"))
+# 
+#             rep_sub <- rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time,]
+#             if (nrow(rep_sub) == 0){
+#                 print(paste0("Repetition ", n_rep, " Trial ", trial, " Pond ", pond, " has no data."))
+#                 next
+#             }
+#             rep[rep$Trial == trial & rep$Pond == pond, "Treatment"] <- tmnt
+#             rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "dB"] <- fit.krig(sound_data, rep_sub[, c("x", "y")])$dB
+#             rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "Sound"] <- 1
+#         }
+#     }
+#     rep$HMS <- NULL
+#     saveRDS(rep, paste0("D:/Carp-Model/Fitted CRWs/6 second timestep/holder/Repetition ", n_rep, ".rds"))
+#     toc <- Sys.time()
+#     print(toc - tic)
+# }
 
 ##### This code adds day/night (diel) info to the fitted CRWs
 # trials <- c(1, 2, 3, 4, 5)
