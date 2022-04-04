@@ -210,7 +210,7 @@ get.formulas <- function(nCov, include_diel=FALSE){
                        "~dB*Treatment")
         }else if (nCov == 4){
             names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
-                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+db+Treatment",
+                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+dB+Treatment",
                        "~Trial+Pond+dB:Treatment", "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", 
                        "~Trial+Diel+dB+Treatment", "~Trial+Diel+dB:Treatment", "~Trial+Temp+dB+Treatment", 
                        "~Trial+Temp+dB:Treatment","~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
@@ -253,7 +253,7 @@ get.formulas <- function(nCov, include_diel=FALSE){
                        "~Temp+dB*Treatment")
         }else if (nCov == 4){
             names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
-                       "~Trial+Pond+db*Treatment", "~Trial+Temp+dB*Treatment", 
+                       "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", 
                        "~Pond+Temp+dB*Treatment")
         }else if (nCov == 5){
             names <- c("~Trial+Pond+Temp+dB*Treatment")
@@ -641,7 +641,7 @@ treatment.key <- function(trial, pond){
 
 fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list(step = "gamma", angle = "vm"),
                       initPar = list(step = c(2, 1, 1, 1), angle = c(0, 0, 0, 0)),
-                      modelFormula = ~ Trial + Pond + Diel + Temp + db * Treatment){
+                      modelFormula = ~ Trial + Pond + Diel + Temp + dB * Treatment){
     
     # this ensures that covariate columns have the correct numeric/factor types
     
@@ -652,7 +652,7 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
         Sound <- as.factor(Sound)
         Diel <- as.factor(Diel)
         Temp <- as.numeric(Temp)
-        db <- as.numeric(dB)
+        dB <- as.numeric(dB)
         Dist2SPK <- as.numeric(Dist2SPK)
     })
     
