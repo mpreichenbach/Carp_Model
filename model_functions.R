@@ -159,13 +159,13 @@ fit.crw <- function(telemetry, timestep="6 sec", inits=c(2, 0.001),  retry_fits=
                           attempts=attempts, doParallel = doParallel, ncores = ncores)
     
     # only keep the necessary covariates
-    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel")]
+    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel", "Temp")]
     
     # merge the CRW data with covariate info from telemetry
     tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
     
     #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel"))
+    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel", "Temp"))
 
     return(ModDat)
 }
@@ -245,17 +245,22 @@ get.formulas <- function(nCov, include_diel=FALSE){
             names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
         }else if (nCov == 2){
             names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
-                       "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB*Treatment")
+                       "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB+Treatment",
+                       "~dB:Treatment")
         }else if (nCov == 3){
             names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
-                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB*Treatment", 
-                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB*Treatment", 
-                       "~Temp+dB*Treatment")
+                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
+                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
+                       "~Temp+dB+Treatment", "~Temp+dB:Treatment", "~dB*Treatment")
         }else if (nCov == 4){
             names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
-                       "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", 
-                       "~Pond+Temp+dB*Treatment")
+                       "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temp+dB+Treatment",
+                       "~Trial+Temp+dB:Treatment", "~Pond+Temp+dB+Treatment", "~Pond+Temp+dB:Treatment",
+                       "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temp+dB*Treatment")
         }else if (nCov == 5){
+            names <- c("~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
+                       "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", "~Pond+Temp+dB*Treatment")
+        }else if (nCov == 6){
             names <- c("~Trial+Pond+Temp+dB*Treatment")
         }
         
