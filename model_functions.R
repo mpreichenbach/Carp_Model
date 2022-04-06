@@ -731,28 +731,28 @@ fit.model.list <- function(list_element){
 }
 
 # multiprocessing
-rep <- readRDS(put something here)
-for (i in c(0, 1, 2, 3, 4, 5, 6)){
-  frm <- get.formulas(i)
-
-  frm_list <- list()
-  for (j in 1:length(frm)){
-    frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
-  }
-
-  cl <- makeCluster(10)
-  clusterExport(cl, c("fit.model.list", "fit.model"))
-  clusterEvalQ(cl, library(momentuHMM))
-
-  tic = Sys.time()
-  hmm <- parLapplyLB(cl, frm_list, fit.model.list)
-  toc = Sys.time()
-  print(paste0("Fitting models with ", i, " covariates is complete."))
-  print(toc - tic)
-
-  saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
-  stopCluster(cl)
-}
+# rep <- readRDS(put something here)
+# for (i in c(0, 1, 2, 3, 4, 5, 6)){
+#   frm <- get.formulas(i)
+# 
+#   frm_list <- list()
+#   for (j in 1:length(frm)){
+#     frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
+#   }
+# 
+#   cl <- makeCluster(10)
+#   clusterExport(cl, c("fit.model.list", "fit.model"))
+#   clusterEvalQ(cl, library(momentuHMM))
+# 
+#   tic = Sys.time()
+#   hmm <- parLapplyLB(cl, frm_list, fit.model.list)
+#   toc = Sys.time()
+#   print(paste0("Fitting models with ", i, " covariates is complete."))
+#   print(toc - tic)
+# 
+#   saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
+#   stopCluster(cl)
+# }
 
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
