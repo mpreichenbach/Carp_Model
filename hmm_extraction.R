@@ -3,12 +3,12 @@ libary(readr)
 
 ##### These functions extract info from the fitted HMM models
 
-compile.AIC <- function(path, verbose=TRUE){
+compile.AIC <- function(path, verbose=FALSE){
     # extract all AIC scores from files in Repetition X folders
     tic <- Sys.time()
     
     files <- list.files(path)
-    aic_holder <- as.data.frame(formula=character(0),
+    aic_holder <- data.frame(formula=character(0),
                                 nCov=integer(0),
                                 AIC=numeric(0))
 
@@ -22,12 +22,14 @@ compile.AIC <- function(path, verbose=TRUE){
         aic_values <- c()
         for (i in 1:nHMM){
             frm <- format(hmm_list[[i]]$conditions$formula)
+            frm <- gsub(" ", "", frm, fixed=TRUE)
+            
             formulas <- append(formulas, frm)
             aic_values <- append(aic_values, AIC(hmm_list[[i]]))
         }
         
         # dataframe of model formulas and AIC scores for a given number of covariates
-        sub_aic_holder <- as.data.frame(formula=formulas,
+        sub_aic_holder <- data.frame(formula=formulas,
                                         nCov=rep(nCov, nHMM),
                                         AIC=aic_values)
         
@@ -41,6 +43,7 @@ compile.AIC <- function(path, verbose=TRUE){
         print(paste0("Finished computing AIC values for HMMs; time elapsed: ", 
                      round(t_elapsed), " seconds."))
     }
+    
     return(aic_holder)
 }
 
