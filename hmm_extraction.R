@@ -3,8 +3,9 @@ libary(readr)
 
 ##### These functions extract info from the fitted HMM models
 
-compile.AIC <- function(path){
+compile.AIC <- function(path, verbose=TRUE){
     # extract all AIC scores from files in Repetition X folders
+    tic <- Sys.time()
     
     files <- list.files(path)
     aic_holder <- as.data.frame(formula=character(0),
@@ -33,5 +34,13 @@ compile.AIC <- function(path){
         aic_holder <- rbind(aic_holder, sub_aic_holder)
     }
     
+    toc <- Sys.time()
+    t_elapsed <- toc - tic
+    
+    if (verbose){
+        print(paste0("Finished computing AIC values for HMMs; time elapsed: ", 
+                     round(t_elapsed), " seconds."))
+    }
     return(aic_holder)
 }
+
