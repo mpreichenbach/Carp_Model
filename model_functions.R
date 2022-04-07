@@ -181,11 +181,11 @@ get.formulas <- function(nCov, include_diel=FALSE){
     # it would be helpful to expand this function to allow for covariate name inputs, and an
     # n-choose-k functionality to return all possible formulas with nCov covariates.
     
-    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))){
+    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6, 7))){
         stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
     }
     
-    if (!(include_diel) & nCov == 6){
+    if (!(include_diel) & nCov == 7){
         stop("Set include_diel to TRUE if you want formulas with 6 covariates.")
     }
     
