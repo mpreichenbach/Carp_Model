@@ -16,6 +16,7 @@ library(sp)
 library(StreamMetabolism)
 library(tidyverse)
 library(viridis)
+libary(hms)
 
 
 compile.crw <- function(on_time, trials = c(1, 2, 3, 4, 5), path="~/Carp-Model/Fitted CRWs"){
@@ -731,7 +732,12 @@ fit.model.list <- function(list_element){
 }
 
 # multiprocessing
-# rep <- readRDS(put something here)
+# rep <- readRDS("D:/Carp-Model/Fitted CRWs/Repetition 2.RDS")
+# > on_time <- sound.data()[2, "Time"]
+# > bad_tags <- unique(rep[rep$step > 40, "ID"])
+# > rep <- rep[!(rep$ID %in% bad_tags),]
+## these lines subset the data to 5 minutes before/after the on-time
+# > rep <- rep[as_hms(on_time - 300) <= as_hms(rep$Time) & as_hms(rep$Time) <= as_hms(on_time + 300),]
 # for (i in c(0, 1, 2, 3, 4, 5, 6)){
 #   frm <- get.formulas(i)
 # 
