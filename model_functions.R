@@ -732,33 +732,33 @@ fit.model.list <- function(list_element){
 }
 
 # multiprocessing
-rep <- readRDS("D:/Carp-Model/Fitted CRWs/Repetition 2.RDS")
-on_time <- sound.data()[2, "Time"]
-bad_tags <- unique(rep[rep$step > 40, "ID"])
-rep <- rep[!(rep$ID %in% bad_tags),]
-# these lines subset the data to 5 minutes before/after the on-time
-rep <- rep[as_hms(on_time - 300) <= as_hms(rep$Time) & as_hms(rep$Time) <= as_hms(on_time + 300),]
-for (i in c(0, 1, 2, 3, 4, 5, 6)){
-  frm <- get.formulas(i)
-
-  frm_list <- list()
-  for (j in 1:length(frm)){
-    frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
-  }
-
-  cl <- makeCluster(10)
-  clusterExport(cl, c("fit.model.list", "fit.model"))
-  clusterEvalQ(cl, library(momentuHMM))
-
-  tic = Sys.time()
-  hmm <- parLapplyLB(cl, frm_list, fit.model.list)
-  toc = Sys.time()
-  print(paste0("Fitting models with ", i, " covariates is complete."))
-  print(toc - tic)
-
-  saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
-  stopCluster(cl)
-}
+# rep <- readRDS("D:/Carp-Model/Fitted CRWs/Repetition 2.RDS")
+# on_time <- sound.data()[2, "Time"]
+# bad_tags <- unique(rep[rep$step > 40, "ID"])
+# rep <- rep[!(rep$ID %in% bad_tags),]
+# # these lines subset the data to 5 minutes before/after the on-time
+# rep <- rep[as_hms(on_time - 300) <= as_hms(rep$Time) & as_hms(rep$Time) <= as_hms(on_time + 300),]
+# for (i in c(0, 1, 2, 3, 4, 5, 6)){
+#   frm <- get.formulas(i)
+# 
+#   frm_list <- list()
+#   for (j in 1:length(frm)){
+#     frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
+#   }
+# 
+#   cl <- makeCluster(10)
+#   clusterExport(cl, c("fit.model.list", "fit.model"))
+#   clusterEvalQ(cl, library(momentuHMM))
+# 
+#   tic = Sys.time()
+#   hmm <- parLapplyLB(cl, frm_list, fit.model.list)
+#   toc = Sys.time()
+#   print(paste0("Fitting models with ", i, " covariates is complete."))
+#   print(toc - tic)
+# 
+#   saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
+#   stopCluster(cl)
+# }
 
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
@@ -1074,22 +1074,22 @@ for (i in c(0, 1, 2, 3, 4, 5, 6)){
 # files <- list.files(telemetry_path)
 # for (file in files){
 #     rep_data <- readRDS(paste0(telemetry_path, file))
-    # rep_data$DOY <- substr(as.character(rep_data$Time), 1, 10)
-    # rep_data$Temp <- 0
-    # print(file)
-    # for (trial in c(1, 2, 3, 4, 5)){
-    #     for (pond in c(26, 27, 30, 31)){
-    #         dates <- unique(rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "DOY"])
-    #         for (date_str in dates){
-    #             mean_temp <- mean(temp_data[(temp_data$Pond == pond) & (temp_data$Trial == trial)
-    #                                         & (temp_data$DOY == date_str),
-    #                                         "Temp_C"])
-    #             rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "Temp"] <- mean_temp
-    #             print(paste("Trial", trial, "Pond", pond, "Temp", mean_temp))
-    #         }
-    #     }
-    # }
-    # rep_data$DOY <- NULL
+# rep_data$DOY <- substr(as.character(rep_data$Time), 1, 10)
+# rep_data$Temp <- 0
+# print(file)
+# for (trial in c(1, 2, 3, 4, 5)){
+#     for (pond in c(26, 27, 30, 31)){
+#         dates <- unique(rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "DOY"])
+#         for (date_str in dates){
+#             mean_temp <- mean(temp_data[(temp_data$Pond == pond) & (temp_data$Trial == trial)
+#                                         & (temp_data$DOY == date_str),
+#                                         "Temp_C"])
+#             rep_data[(rep_data$Pond == pond) & (rep_data$Trial == trial), "Temp"] <- mean_temp
+#             print(paste("Trial", trial, "Pond", pond, "Temp", mean_temp))
+#         }
+#     }
+# }
+# rep_data$DOY <- NULL
 #     saveRDS(rep_data, paste0("D:/Carp-Model/Processed Telemetry Data/added temp/", file))
 #     print("Temperature merge complete.")
 # }
