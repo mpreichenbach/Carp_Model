@@ -659,7 +659,6 @@ fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list
         Diel <- as.factor(Diel)
         Temp <- as.numeric(Temp)
         dB <- as.numeric(dB)
-        Dist2SPK <- as.numeric(Dist2SPK)
     })
     
     # this logic takes adds zeromass parameters, if 0 exists as a step-length in the data
@@ -732,33 +731,33 @@ fit.model.list <- function(list_element){
 }
 
 # multiprocessing
-# rep <- readRDS("D:/Carp-Model/Fitted CRWs/Repetition 2.RDS")
-# on_time <- sound.data()[2, "Time"]
-# bad_tags <- unique(rep[rep$step > 40, "ID"])
-# rep <- rep[!(rep$ID %in% bad_tags),]
-# # these lines subset the data to 5 minutes before/after the on-time
-# rep <- rep[as_hms(on_time - 300) <= as_hms(rep$Time) & as_hms(rep$Time) <= as_hms(on_time + 300),]
-# for (i in c(0, 1, 2, 3, 4, 5, 6)){
-#   frm <- get.formulas(i)
-# 
-#   frm_list <- list()
-#   for (j in 1:length(frm)){
-#     frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
-#   }
-# 
-#   cl <- makeCluster(10)
-#   clusterExport(cl, c("fit.model.list", "fit.model"))
-#   clusterEvalQ(cl, library(momentuHMM))
-# 
-#   tic = Sys.time()
-#   hmm <- parLapplyLB(cl, frm_list, fit.model.list)
-#   toc = Sys.time()
-#   print(paste0("Fitting models with ", i, " covariates is complete."))
-#   print(toc - tic)
-# 
-#   saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
-#   stopCluster(cl)
-# }
+rep <- readRDS("D:/Carp-Model/Fitted CRWs/Repetition 2.RDS")
+on_time <- sound.data()[2, "Time"]
+bad_tags <- unique(rep[rep$step > 40, "ID"])
+rep <- rep[!(rep$ID %in% bad_tags),]
+# these lines subset the data to 5 minutes before/after the on-time
+rep <- rep[as_hms(on_time - 300) <= as_hms(rep$Time) & as_hms(rep$Time) <= as_hms(on_time + 300),]
+for (i in c(0, 1, 2, 3, 4, 5, 6)){
+  frm <- get.formulas(i)
+
+  frm_list <- list()
+  for (j in 1:length(frm)){
+    frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
+  }
+
+  cl <- makeCluster(10)
+  clusterExport(cl, c("fit.model.list", "fit.model"))
+  clusterEvalQ(cl, library(momentuHMM))
+
+  tic = Sys.time()
+  hmm <- parLapplyLB(cl, frm_list, fit.model.list)
+  toc = Sys.time()
+  print(paste0("Fitting models with ", i, " covariates is complete."))
+  print(toc - tic)
+
+  saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/Repetition X/", i, " covariates.RDS"))
+  stopCluster(cl)
+}
 
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
