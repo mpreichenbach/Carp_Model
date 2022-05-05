@@ -37,6 +37,9 @@ compile.AIC <- function(path, verbose=FALSE){
     }
     
     aic_holder$Rank <- rank(aic_holder$AIC)
+    aic_holder <- aic_holder[order(aic_holder$Rank),]
+    aic_holder$DeltaAIC <- 0
+    aic_holder$DeltaAIC[2:nrow(aic_holder)] <- diff(aic_holder$AIC)
     
     toc <- Sys.time()
     t_elapsed <- toc - tic
