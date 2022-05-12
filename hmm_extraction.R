@@ -1,5 +1,6 @@
 library(momentuHMM)
 library(readr)
+library(dplyr)
 
 ##### These functions extract info from the fitted HMM models
 
@@ -40,6 +41,7 @@ compile.AIC <- function(path, verbose=FALSE){
     aic_holder <- aic_holder[order(aic_holder$Rank),]
     aic_holder$DeltaAIC <- 0
     aic_holder$DeltaAIC[2:nrow(aic_holder)] <- diff(aic_holder$AIC)
+    aic_holder <- relocate(aic_holder, Rank)
     
     toc <- Sys.time()
     t_elapsed <- toc - tic
