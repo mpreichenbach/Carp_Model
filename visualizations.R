@@ -60,10 +60,11 @@ proportion.plots <- function(best_models, trials=1:5, on_times, plot=TRUE, save_
     for (trial in trials){
         data <- df_proportions[df_proportions$Trial == trial,]
         
-        ggplot(data, aes(x=Rep, y=States, fill=Names)) +
+        plt <- ggplot(data, aes(x=Rep, y=States, fill=Names)) +
             geom_col(position="fill") +
-            # possibly backwards
-            scale_fill_manual(values=c("#E69F00", "#56B4E9"))
+            scale_fill_manual(values=c("#56B4E9", "#E69F00"))
+        
+        print(plt)
     }
 }
 
