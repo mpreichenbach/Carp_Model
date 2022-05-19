@@ -17,8 +17,9 @@ aic.caterpillar <- function(aic_df, loc="mean", colors=c("blue", "red"), descend
     }
 }
 
-proportion.plots <- function(best_models, trials=1:5, on_times, plot=TRUE, save_path=NA, 
-                             state_names=c("exploratory", "encamped"), include_sun_times=TRUE){
+proportion.plots <- function(best_models, trials=1:5, plot=TRUE, save_path=NA, 
+                             state_names=c("exploratory", "encamped"), 
+                             state_colors=c("#56B4E9", "#E69F00"), include_sun_times=TRUE){
     # Generates plots for each trial with the relative proportions of behavioral states.
     
     # make sure that all trials have data
@@ -37,18 +38,18 @@ proportion.plots <- function(best_models, trials=1:5, on_times, plot=TRUE, save_
     
     # compile the relevant dataframe
     df_proportions <- data.frame(matrix(ncol=4, nrow=0))
-    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names")
+    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel")
     for (rep in 1:n_models){
         best_model <- best_models[[rep]]
         state_sequence <- viterbi(best_model)
         
         holder <- data.frame(matrix(ncol=4, nrow=length(state_sequence)))
-        colnames(holder) <- c("Rep", "Trial", "States", "Names")
-        data <- df_proportions[df_proportions$Trial == trial,]
+        colnames(holder) <- c("Rep", "Trial", "States", "Names", "Diel")
         
-        holder["Rep"] <- paste0("Rep. ", rep)
+        holder["Rep"] <- rep
         holder["Trial"] <- best_model$data$Trial
         holder["States"] <- state_sequence
+        holder["Diel"] <- best_model$data$Diel
         for (i in 1:length(state_names)){
             holder[holder$States == i, "Names"] <- state_names[i]
         }
@@ -59,11 +60,24 @@ proportion.plots <- function(best_models, trials=1:5, on_times, plot=TRUE, save_
     # make the plots
     for (trial in trials){
         data <- df_proportions[df_proportions$Trial == trial,]
+        # get sunrise/sunset times
         
         plt <- ggplot(data, aes(x=Rep, y=States, fill=Names)) +
             geom_col(position="fill") +
-            scale_fill_manual(values=c("#56B4E9", "#E69F00"))
-        
+            scale_fill_manual(values=state_colors) +
+            coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
+            scale_x_continuous(breaks=seq(from=1, to=24, by=1), labels=seq(from=1, to=24, by=1)) +
+            labs(title=paste0("Trial ", trial, " Behavioral States"), 
+                 x="Repetition Number", 
+                 y="Proportion", 
+                 fill="States") +
+            theme(plot.title=element_text(hjust = 0.5), 
+                  legend.title=element_blank(),
+                  panel.grid.major=element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.background=element_blank(),
+                  axis.line=element_line(colour="black"))
+                  
         print(plt)
     }
 }
