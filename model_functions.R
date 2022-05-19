@@ -2,6 +2,7 @@ library(animation)
 library(automap)
 library(circular)
 library(doFuture)
+library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(maps)
@@ -64,6 +65,34 @@ convert.coords <- function(df,
     df_out <- as.data.frame(spTransform(df, output_crs)@coords)
     
     return(df_out)
+}
+
+
+diel.column <- function(df, time_name="Time", dn_vals=c(0, 1), 
+                        latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
+    # this outputs a column of diel values
+    
+    time_df <- data.frame(matrix(dn_vals[2], ncol=2, nrow=nrow(df)))
+    colnames(time_df) <- c(time_name, "Diel")
+    time_df[,time_name] <- df[,time_name]
+    
+    df_dates <- unique(as.Date(df[,time_name]))
+    
+    for (the_date in df_dates){
+        the_date <- as.Date(the_date)
+        sunRS <- sunrise.set(latlong[1], latlong[2],
+                             paste0(year(the_date), '/', month(the_date), '/', 
+                                    day(the_date)),
+                             timezone=timezone)
+        sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
+        sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
+        
+        time_df[sunRise < time_df[,time_name] & time_df[, time_name] < sunSet, "Diel"] <- dn_vals[1]
+    }
+    
+    time_df[,time_name] <- NULL
+    
+    return(time_df)
 }
 
 
