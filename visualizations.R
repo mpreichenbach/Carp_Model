@@ -1,55 +1,41 @@
 library(ggplot2)
 library(dplyr)
+library(momentuHMM)
 
-aic.caterpillar <- function(aic_df, loc="mean", colors=c("blue", "red"), descending_rank=TRUE){
-    # Generates a caterpillar plot of the AIC scores for the various models fitted to a given
-    # dataset. The loc argument stands for "line of comparison", and can take values "mean",
-    # "median", and "none". The colors argument should be a vector of strings.
-    
-    if (loc == "mean"){
-        y_loc <- mean(aic_df$AIC)
-    }else if (loc == "median"){
-        y_loc <- median(aic_df$AIC)
-    }
-    
-    if (loc == "none"){
-        
-    }
-}
 
-proportion.plots <- function(best_models, trials=1:5, plot=TRUE, save_path=NA, 
+proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
-                             state_colors=c("#56B4E9", "#E69F00"), include_sun_times=TRUE){
+                             state_colors=c("#56B4E9", "#E69F00")){
     # Generates plots for each trial with the relative proportions of behavioral states.
     
     # make sure that all trials have data
-    n_models <- length(best_models)
+    n_models <- length(models)
     for (i in 1:length(models)){
-        trial_comparison <- as.numeric(unique(best_models[[1]]$data$Trial))
+        trial_comparison <- as.numeric(unique(models[[1]]$data$Trial))
         if (setequal(trials, trial_comparison)){
             next
         }else{
             stop(paste0("Repetition ", i, " has fewer trials than required."))
         }
     }
-    
-    # make sure that on_times matches n_models
-    if (n_models != on_times){stop("Number of fitted models does not match number of on_times.")}
-    
+
     # compile the relevant dataframe
-    df_proportions <- data.frame(matrix(ncol=4, nrow=0))
-    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel")
+    df_proportions <- data.frame(matrix(ncol=6, nrow=0))
+    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel", "RepDiel")
     for (rep in 1:n_models){
-        best_model <- best_models[[rep]]
-        state_sequence <- viterbi(best_model)
+        model <- models[[rep]]
+        state_sequence <- viterbi(model)
         
-        holder <- data.frame(matrix(ncol=4, nrow=length(state_sequence)))
+        holder <- data.frame(matrix(ncol=6, nrow=length(state_sequence)))
         colnames(holder) <- c("Rep", "Trial", "States", "Names", "Diel")
         
-        holder["Rep"] <- rep
-        holder["Trial"] <- best_model$data$Trial
-        holder["States"] <- state_sequence
-        holder["Diel"] <- best_model$data$Diel
+        holder$Rep <- rep
+        holder$Trial <- model$data$Trial
+        holder$States <- state_sequence
+        holder["Diel"] <- as.numeric(model$data$Diel)
+        
+        # for reps which a mix of day/night data, assign to night (1) if more than 50% are night
+        holder$RepDiel <- as.factor(ifelse(sum(holder$Diel) / nrow(holder) > 0.5, 1, 0))
         for (i in 1:length(state_names)){
             holder[holder$States == i, "Names"] <- state_names[i]
         }
@@ -62,11 +48,12 @@ proportion.plots <- function(best_models, trials=1:5, plot=TRUE, save_path=NA,
         data <- df_proportions[df_proportions$Trial == trial,]
         # get sunrise/sunset times
         
-        plt <- ggplot(data, aes(x=Rep, y=States, fill=Names)) +
+        plt <- ggplot(data, aes(x=Rep, y=States, fill=Names, alpha=factor(RepDiel))) +
             geom_col(position="fill") +
             scale_fill_manual(values=state_colors) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
-            scale_x_continuous(breaks=seq(from=1, to=24, by=1), labels=seq(from=1, to=24, by=1)) +
+            scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
+            scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
             labs(title=paste0("Trial ", trial, " Behavioral States"), 
                  x="Repetition Number", 
                  y="Proportion", 
@@ -79,9 +66,22 @@ proportion.plots <- function(best_models, trials=1:5, plot=TRUE, save_path=NA,
                   axis.line=element_line(colour="black"))
                   
         print(plt)
+        
+        if (!(is.na(save_path))){
+            ggsave(paste0("D:/Carp-Model/Trial ", trial, " State Proportions (5 min).png"))
+        }
     }
 }
 
+aic.caterpillar(df, colors=c("red", "blue"), midline="mean"){
+    # makes a caterpillar/bar plot for AIC scores; colors correspond to negative/positive side of
+    # the midline, respectively. Options for midline include "mean" and "median". The data df should
+    # be the output of compile.AIC().
+    
+    if (midline == "mean"){
+        
+    }
+}
 
 
 

@@ -81,8 +81,7 @@ diel.column <- function(df, time_name="Time", dn_vals=c(0, 1),
     for (the_date in df_dates){
         the_date <- as.Date(the_date)
         sunRS <- sunrise.set(latlong[1], latlong[2],
-                             paste0(year(the_date), '/', month(the_date), '/', 
-                                    day(the_date)),
+                             paste0(year(the_date), '/', month(the_date), '/', day(the_date)),
                              timezone=timezone)
         sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
         sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
@@ -92,7 +91,7 @@ diel.column <- function(df, time_name="Time", dn_vals=c(0, 1),
     
     time_df[,time_name] <- NULL
     
-    return(time_df)
+    return(pull(time_df))
 }
 
 
