@@ -1,5 +1,4 @@
-library(ggplot2)
-library(dplyr)
+library(tidyverse)
 library(momentuHMM)
 
 
@@ -73,14 +72,29 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 }
 
-aic.caterpillar(df, colors=c("red", "blue"), midline="mean"){
-    # makes a caterpillar/bar plot for AIC scores; colors correspond to negative/positive side of
-    # the midline, respectively. Options for midline include "mean" and "median". The data df should
-    # be the output of compile.AIC().
+aic.plot <- function(df, rep, colors=c("green"), values="DeltaAIC", disp_cov=NA){
+    # makes a line graph of either values="DeltaAIC", or values="AIC".
     
-    if (midline == "mean"){
-        
+    # creates values to plot, and a factor variable for which covariates to highlight.
+    df$Values <- df$AIC - min(df$AIC)
+    df$DispCov <- 1
+    for (covariate in disp_cov){
+        df[grepl(covariate, df$formula, fixed=TRUE), "DispCov"] <- 2
     }
+    df$DispCov <- factor(df$DispCov)
+    
+    # create the plot
+    plt <- ggplot(data=df, aes(x=reorder(formula, Rank), y=Values)) + 
+        geom_point(colour=df$DispCov) +
+        geom_line(aes(group=1)) + 
+        scale_x_discrete(labels=df$formula) +
+        labs(title=paste0("\u0394AIC Scores for Rep. ", rep),
+             x="Formula") +
+        theme(axis.text.x = element_text(angle=90, hjust=0.95, vjust=0.2),
+              axis.title.y=element_blank(),
+              plot.title=element_text(hjust=0.5))
+    
+    print(plt)
 }
 
 
