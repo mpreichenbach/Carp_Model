@@ -72,42 +72,34 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 }
 
-aic.plot <- function(df, rep, colors=c("green"), values="DeltaAIC", disp_cov=NA){
-    # makes a line graph of either values="DeltaAIC", or values="AIC".
+aic.plot <- function(df, rep, colors=c("blue", "red"), disp_cov=NA){
+    # makes a line graph rescaled so that the best model is at 0, and subsequent points increase by
+    # their DeltaAIC value. The argument disp_cov should be one of the strings"dB", "Temp", "Pond", 
+    # "Trial", "Treatment". The colors vector specifies first the main plot color, and secondarily 
+    # the covariate point colors.
     
     # creates values to plot, and a factor variable for which covariates to highlight.
     df$Values <- df$AIC - min(df$AIC)
-    df$DispCov <- 1
-    for (covariate in disp_cov){
-        df[grepl(covariate, df$formula, fixed=TRUE), "DispCov"] <- 2
+    df$DispCov <- paste0("Without ", disp_cov)
+    if (!is.na(disp_cov)){
+        for (covariate in disp_cov){
+            df[grepl(covariate, df$formula, fixed=TRUE), "DispCov"] <- paste0("With ", disp_cov)
+        }
+        df$DispCov <- factor(df$DispCov)
     }
-    df$DispCov <- factor(df$DispCov)
-    
+
     # create the plot
     plt <- ggplot(data=df, aes(x=reorder(formula, Rank), y=Values)) + 
-        geom_point(colour=df$DispCov) +
-        geom_line(aes(group=1)) + 
+        geom_line(aes(group=1), size=1, color="blue") + 
+        geom_point(aes(colour=DispCov), size=3) +
+        scale_color_manual(values=colors) +
         scale_x_discrete(labels=df$formula) +
-        labs(title=paste0("\u0394AIC Scores for Rep. ", rep),
-             x="Formula") +
+        labs(title=paste0("Cumulative \u0394AIC Scores for Rep. ", rep), color="Formulas") +
         theme(axis.text.x = element_text(angle=90, hjust=0.95, vjust=0.2),
+              axis.title.x=element_blank(),
               axis.title.y=element_blank(),
-              plot.title=element_text(hjust=0.5))
+              plot.title=element_text(hjust=0.5),
+              legend.title=element_text(hjust=0.5))
     
     print(plt)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
