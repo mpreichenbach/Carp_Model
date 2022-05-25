@@ -72,7 +72,7 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 }
 
-aic.plot <- function(df, rep, colors=c("black", "red"), disp_cov=NA){
+aic.plot <- function(df, rep, colors=c("red", "black"), disp_cov=NA){
     # makes a line graph rescaled so that the best model is at 0, and subsequent points increase by
     # their DeltaAIC value. The argument disp_cov should be one of the strings"dB", "Temp", "Pond", 
     # "Trial", "Treatment". The colors vector specifies first the main plot color, and secondarily 
