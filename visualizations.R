@@ -72,7 +72,7 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 }
 
-aic.plot <- function(df, rep, colors=c("blue", "red"), disp_cov=NA){
+aic.plot <- function(df, rep, colors=c("black", "red"), disp_cov=NA){
     # makes a line graph rescaled so that the best model is at 0, and subsequent points increase by
     # their DeltaAIC value. The argument disp_cov should be one of the strings"dB", "Temp", "Pond", 
     # "Trial", "Treatment". The colors vector specifies first the main plot color, and secondarily 
@@ -90,8 +90,8 @@ aic.plot <- function(df, rep, colors=c("blue", "red"), disp_cov=NA){
 
     # create the plot
     plt <- ggplot(data=df, aes(x=reorder(formula, Rank), y=Values)) + 
-        geom_line(aes(group=1), size=1, color="blue") + 
-        geom_point(aes(colour=DispCov), size=3) +
+        geom_line(aes(group=1), size=1) + 
+        geom_point(aes(colour=DispCov), size=3, show.legend=!is.na(disp_cov)) +
         scale_color_manual(values=colors) +
         scale_x_discrete(labels=df$formula) +
         labs(title=paste0("Cumulative \u0394AIC Scores for Rep. ", rep), color="Formulas") +
