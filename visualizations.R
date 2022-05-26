@@ -72,13 +72,14 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 }
 
-aic.plot <- function(df, rep, colors=c("red", "black"), disp_cov=NA){
+aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_cov=NA){
     # makes a line graph rescaled so that the best model is at 0, and subsequent points increase by
     # their DeltaAIC value. The argument disp_cov should be one of the strings"dB", "Temp", "Pond", 
     # "Trial", "Treatment". The colors vector specifies first the main plot color, and secondarily 
     # the covariate point colors.
     
     # creates values to plot, and a factor variable for which covariates to highlight.
+    df <- df[df$Rank %in% include_ranks,]
     df$Values <- df$AIC - min(df$AIC)
     df$DispCov <- paste0("Without ", disp_cov)
     if (!is.na(disp_cov)){
@@ -103,3 +104,31 @@ aic.plot <- function(df, rep, colors=c("red", "black"), disp_cov=NA){
     
     print(plt)
 }
+
+
+db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9", "#E69F00")){
+    # plots overlapping histograms of the dB variable, colored by the different states
+    
+    if (sum(c(is.na(bins), is.na(binwidth))) != 1){
+        stop("Only assign a value to one of bins/binwidth.")
+    }
+    
+    df <- df[df$dB > 0,]
+    df$Names <- "encamped"
+    df[df$States == 2, "Names"] <- "exploratory"
+    df$Names <- factor(df$Names)
+    
+    plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
+        geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.4, position="identity") + 
+        scale_fill_manual(values=state_colors) + 
+        labs(title=paste0("Repetition ", rep, " Histogram of dB Values")) + 
+        theme(plot.title=element_text(hjust=0.5),
+              legend.title=element_blank())
+    
+    print(plt)
+}
+    
+    
+    
+    
+    
