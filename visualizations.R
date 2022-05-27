@@ -106,7 +106,8 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
 }
 
 
-db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9", "#E69F00")){
+db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9", "#E69F00"), 
+                          xlims=c(125, 175), include_means=False){
     # plots overlapping histograms of the dB variable, colored by the different states
     
     if (sum(c(is.na(bins), is.na(binwidth))) != 1){
@@ -118,12 +119,22 @@ db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9"
     df[df$States == 2, "Names"] <- "exploratory"
     df$Names <- factor(df$Names)
     
+    if (include_means){
+        mean_1 <- mean(df[df$States == 1, "dB"])
+        mean_2 <- mean(df[df$States == 2, "dB"])
+    }
+    
     plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
         geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.4, position="identity") + 
         scale_fill_manual(values=state_colors) + 
-        labs(title=paste0("Repetition ", rep, " Histogram of dB Values")) + 
+        {if(include_means)geom_vline(xintercept=mean_1, color=state_colors[1])} +
+        {if(include_means)geom_vline(xintercept=mean_2, color=state_colors[2])} +
+        xlim(xlims) + 
+        labs(title=paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions (5 min)"), 
+             x="Sound Intensity (dB)") + 
         theme(plot.title=element_text(hjust=0.5),
-              legend.title=element_blank())
+              legend.title=element_blank(),
+              panel.background=element_blank())
     
     print(plt)
 }
