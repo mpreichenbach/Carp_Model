@@ -106,8 +106,8 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
 }
 
 
-db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9", "#E69F00"), 
-                          xlims=c(125, 175), include_means=False){
+db.histogram <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#E69F00", "#56B4E9"), 
+                          xlims=c(125, 175), include_means=FALSE){
     # plots overlapping histograms of the dB variable, colored by the different states
     
     if (sum(c(is.na(bins), is.na(binwidth))) != 1){
@@ -115,30 +115,68 @@ db.histograms <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#56B4E9"
     }
     
     df <- df[df$dB > 0,]
-    df$Names <- "encamped"
-    df[df$States == 2, "Names"] <- "exploratory"
-    df$Names <- factor(df$Names)
+    df$Names <- "exploratory"
+    df[df$States == 2, "Names"] <- "encamped"
+    df$Names <- factor(df$Names, levels=c("exploratory", "encamped"))
+    
+    plt_title <- paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions")
     
     if (include_means){
         mean_1 <- mean(df[df$States == 1, "dB"])
         mean_2 <- mean(df[df$States == 2, "dB"])
+        plt_title <-paste0(plt_title, " (with mean lines)")
     }
     
     plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
-        geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.4, position="identity") + 
+        geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.5, position="identity") + 
         scale_fill_manual(values=state_colors) + 
-        {if(include_means)geom_vline(xintercept=mean_1, color=state_colors[1])} +
-        {if(include_means)geom_vline(xintercept=mean_2, color=state_colors[2])} +
+        {if(include_means)geom_vline(xintercept=mean_1, size=1.5, color=state_colors[1])} +
+        {if(include_means)geom_vline(xintercept=mean_2, size=1.5, color=state_colors[2])} +
         xlim(xlims) + 
-        labs(title=paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions (5 min)"), 
-             x="Sound Intensity (dB)") + 
+        labs(title=plt_title, x="Sound Intensity (dB)") + 
         theme(plot.title=element_text(hjust=0.5),
               legend.title=element_blank(),
               panel.background=element_blank())
     
     print(plt)
 }
+
+db.means.plot <- function(models, state_colors=c("#E69F00", "#56B4E9")){
+    # plots the means of dB levels experienced in different states
     
+    state_1_means <- c()
+    state_2_means <- c()
+    
+    for (i in 1:length(models)){
+        df <- models[[i]]$data
+        state_1_means[i] <- mean(df[df$dB > 0 & df$States == 1, "dB"])
+        state_2_means[i] <- mean(df[df$dB > 0 & df$States == 2, "dB"])
+    }
+    
+    diff_vec <- state_1_means - state_2_means
+    
+    df_means <- data.frame(diff_vec, sign(diff_vec))
+    colnames(df_means) <- c("Difference", "Sign")
+    
+    df_means$Namess <- "encamped"
+    df_means[df_means$Sign > 0, "Names"] <- "exploratory"
+    df_means$Sign <- factor(df_means$Sign)
+    df_means$States <- factor(df_means$Names, levels=c("exploratory", "encamped"))
+    
+    # makes the line plots
+    
+    plt <- ggplot(df_means, aes(x=1:length(models), y=Difference)) + 
+        geom_col(aes(fill=States)) +
+        scale_fill_manual(values=state_colors) +
+        scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
+        labs(title="Difference between Exploratory and Encamped Mean dB", x="Repetition") +
+        theme(plot.title=element_text(hjust=0.5),
+              axis.title.y=element_blank(),
+              legend.title=element_blank(),
+              panel.background=element_blank())
+    
+    print(plt)
+}
     
     
     
