@@ -15,7 +15,7 @@ compile.AIC <- function(path, verbose=FALSE){
 
     for (f in files){
         nCov <- parse_number(f)
-        hmm_list <- readRDS(paste0(path, f))
+        hmm_list <- readRDS(file.path(path, f))
         nHMM <- length(hmm_list)
         
         # collect the formulas from the HMMs into a character vector
