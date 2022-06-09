@@ -2,10 +2,11 @@ library(tidyverse)
 library(momentuHMM)
 
 
-proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA, 
+proportion.plots <- function(models, ba="5min", trials=1:5, plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
                              state_colors=c("#56B4E9", "#E69F00")){
-    # Generates plots for each trial with the relative proportions of behavioral states.
+    # Generates plots for each trial with the relative proportions of behavioral states; the
+    # argument "ba" is the time period considered before/after the sound.
     
     # make sure that all trials have data
     n_models <- length(models)
@@ -19,36 +20,37 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
     }
 
     # compile the relevant dataframe
-    df_proportions <- data.frame(matrix(ncol=6, nrow=0))
-    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel", "RepDiel")
+    df_proportions <- data.frame(matrix(ncol=5, nrow=0))
+    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel")
+    
     for (rep in 1:n_models){
         model <- models[[rep]]
-        state_sequence <- viterbi(model)
-        
-        holder <- data.frame(matrix(ncol=6, nrow=length(state_sequence)))
+        holder <- data.frame(matrix(ncol=5, nrow=nrow(model$data)))
         colnames(holder) <- c("Rep", "Trial", "States", "Names", "Diel")
         
         holder$Rep <- rep
         holder$Trial <- model$data$Trial
-        holder$States <- state_sequence
-        holder["Diel"] <- as.numeric(model$data$Diel)
+        holder$Diel <- as.numeric(as.character(model$data$Diel))
         
-        # for reps which a mix of day/night data, assign to night (1) if more than 50% are night
-        holder$RepDiel <- as.factor(ifelse(sum(holder$Diel) / nrow(holder) > 0.5, 1, 0))
-        for (i in 1:length(state_names)){
-            holder[holder$States == i, "Names"] <- state_names[i]
+        if ("States" %in% colnames(model$data)){
+            holder$States <- model$data$States
+        }else{
+data <- df_proportions[df_proportions$Trial == trial,]            holder$States <- viterbi(model)
+            print(paste0("Finished decoding state sequence for Repetition ", rep, "."))
         }
-
+        
         df_proportions <- rbind(df_proportions, holder)
     }
 
     # make the plots
     for (trial in trials){
-        data <- df_proportions[df_proportions$Trial == trial,]
-        # get sunrise/sunset times
         
-        plt <- ggplot(data, aes(x=Rep, y=States, fill=Names, alpha=factor(RepDiel))) +
-            geom_col(position="fill") +
+        
+        # for reps which a mix of day/night data, assign to night (1) if more than 50% are night.
+        # This is purely for visualization purposes.
+        for (rep in 1:24){
+            data[data$Rep == reggplot(data, aes(x=Rep, y=States, fill=Names)) +
+            geom_col(alpha=factor(data$RepDiel), position="fill") +
             scale_fill_manual(values=state_colors) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
@@ -64,10 +66,17 @@ proportion.plots <- function(models, trials=1:5, plot=TRUE, save_path=NA,
                   panel.background=element_blank(),
                   axis.line=element_line(colour="black"))
                   
-        print(plt)
+        print(plt)p, "RepDiel"] <- as.factor(ifelse(sum(data$Diel) / nrow(data) > 0.5, 1, 0))
+        }
+        
+        for (i in 1:length(state_names)){
+            data[data$States == i, "Names"] <- state_names[i]
+        }
+
+        plt <- 
         
         if (!(is.na(save_path))){
-            ggsave(paste0("D:/Carp-Model/Trial ", trial, " State Proportions (5 min).png"))
+            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, ").png"))
         }
     }
 }
