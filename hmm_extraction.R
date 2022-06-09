@@ -54,18 +54,20 @@ compile.AIC <- function(path, verbose=FALSE){
     return(aic_holder)
 }
 
-top_models <- function(reps=1:24, aic_scores_path, fitted_hmm_path){
+top.models <- function(aic_scores_path, fitted_hmm_path, reps=1:24){
     ##### after running compile.AIC above, this function extracts the top model, and adds it to a
     ##### list indexed by the repetition number. The argument aic_scores_path should point to the
     ##### directory containing the output of compile.AIC, and fitted_hmm_path should point to the
-    ##### directory which contains the "nCov covariates.RDS" files/
+    ##### directory which contains the "Repetition n" folders.
     
+    top_hmms = list()
     for (rep in reps){
-        aic_scores <- read.csv(paste0(aic_scores_path, rep, ".csv"))
+        aic_scores <- read.csv(paste0(aic_scores_path, "Repetition ", rep, ".csv"))
         top_model_info <- aic_scores[aic_scores$Rank == 1,]
         nCov <- top_model_info$nCov
         top_formula <- top_model_info$formula
-        fitted_models <- readRDS(paste0(fitted_hmm_path, rep, "/", nCov, " covariates.RDS"))
+        fitted_models <- readRDS(paste0(fitted_hmm_path, "Repetition ", rep, "/", nCov, 
+                                        " covariates.RDS"))
         n_models <- length(fitted_models)
         for (mod in 1:n_models){
             mod_formula <- format(fitted_models[[mod]]$conditions$formula)
@@ -76,4 +78,6 @@ top_models <- function(reps=1:24, aic_scores_path, fitted_hmm_path){
         }
         print(paste0("Repetition ", rep, " complete."))
     }
+    
+    return(top_hmms)
 }
