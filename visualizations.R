@@ -2,7 +2,7 @@ library(tidyverse)
 library(momentuHMM)
 
 
-proportion.plots <- function(models, ba="5min", trials=1:5, plot=TRUE, save_path=NA, 
+proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
                              state_colors=c("#56B4E9", "#E69F00")){
     # Generates plots for each trial with the relative proportions of behavioral states; the
@@ -26,16 +26,17 @@ proportion.plots <- function(models, ba="5min", trials=1:5, plot=TRUE, save_path
     for (rep in 1:n_models){
         model <- models[[rep]]
         holder <- data.frame(matrix(ncol=5, nrow=nrow(model$data)))
-        colnames(holder) <- c("Rep", "Trial", "States", "Names", "Diel")
+        colnames(holder) <- c("Rep", "Trial", "States", "Diel", "RepDiel")
         
         holder$Rep <- rep
         holder$Trial <- model$data$Trial
         holder$Diel <- as.numeric(as.character(model$data$Diel))
+        holder$RepDiel <- as.factor(model$data$Diel)
         
         if ("States" %in% colnames(model$data)){
             holder$States <- model$data$States
         }else{
-data <- df_proportions[df_proportions$Trial == trial,]            holder$States <- viterbi(model)
+            holder$States <- viterbi(model)
             print(paste0("Finished decoding state sequence for Repetition ", rep, "."))
         }
         
@@ -44,38 +45,36 @@ data <- df_proportions[df_proportions$Trial == trial,]            holder$States 
 
     # make the plots
     for (trial in trials){
+        data <- df_proportions[df_proportions$Trial == trial,]
         
-        
-        # for reps which a mix of day/night data, assign to night (1) if more than 50% are night.
-        # This is purely for visualization purposes.
+        # if there are both day/night 
         for (rep in 1:24){
-            data[data$Rep == reggplot(data, aes(x=Rep, y=States, fill=Names)) +
-            geom_col(alpha=factor(data$RepDiel), position="fill") +
+            if (0 %in% unique(data[data$Rep == rep, "Diel"])){
+                data[data$Rep == rep, "RepDiel"] <- 0
+            }
+        } 
+        data$RepDiel <- as.factor(data$RepDiel)
+
+        plt <- ggplot(data, aes(x=Rep, y=States, fill=factor(States))) + 
+            geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
             scale_fill_manual(values=state_colors) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States"), 
-                 x="Repetition Number", 
-                 y="Proportion", 
-                 fill="States") +
+            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, ")"), x="Repetition Number",
+                 y="Proportion", fill=state_names) +
             theme(plot.title=element_text(hjust = 0.5), 
-                  legend.title=element_blank(),
-                  panel.grid.major=element_blank(),
-                  panel.grid.minor=element_blank(),
-                  panel.background=element_blank(),
-                  axis.line=element_line(colour="black"))
-                  
-        print(plt)p, "RepDiel"] <- as.factor(ifelse(sum(data$Diel) / nrow(data) > 0.5, 1, 0))
-        }
+              legend.title=element_blank(),
+              panel.grid.major=element_blank(),
+              panel.grid.minor=element_blank(),
+              panel.background=element_blank(),
+              axis.line=element_line(colour="black"))
         
-        for (i in 1:length(state_names)){
-            data[data$States == i, "Names"] <- state_names[i]
-        }
-
-        plt <- 
+        if (show_plot){
+            print(plt)
+        }     
         
-        if (!(is.na(save_path))){
+        if (!is.na(save_path)){
             ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, ").png"))
         }
     }
