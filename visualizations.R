@@ -8,6 +8,8 @@ proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save
     # Generates plots for each trial with the relative proportions of behavioral states; the
     # argument "ba" is the time period considered before/after the sound.
     
+    if (is.na(ba)){stop("Specify the before/after period in 'ba' argument.")}
+    
     # make sure that all trials have data
     n_models <- length(models)
     for (i in 1:length(models)){
@@ -113,51 +115,84 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
     print(plt)
 }
 
-db.histogram <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#E69F00", "#56B4E9"), 
-                          xlims=c(125, 175), include_means=FALSE){
+db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE, 
+                         show_plot=TRUE, save_path=NA, state_names=c("exploratory", "encamped"), 
+                         state_colors=c("#E69F00", "#56B4E9")){
     # plots overlapping histograms of the dB variable, colored by the different states
+    
+    if (is.na(ba)){stop("Specify the before/after period in 'ba' argument.")}
     
     if (sum(c(is.na(bins), is.na(binwidth))) != 1){
         stop("Only assign a value to one of bins/binwidth.")
     }
     
-    df <- df[df$dB > 0,]
-    df$Names <- "exploratory"
-    df[df$States == 2, "Names"] <- "encamped"
-    df$Names <- factor(df$Names, levels=c("exploratory", "encamped"))
+    n_reps <- length(models)
+    min_db <- Inf
+    max_db <- -Inf
     
-    plt_title <- paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions")
-    
-    if (include_means){
-        mean_1 <- mean(df[df$States == 1, "dB"])
-        mean_2 <- mean(df[df$States == 2, "dB"])
-        plt_title <-paste0(plt_title, " (with mean lines)")
+    # find the min/max dB among all reps to use as consistent x-axis limits of the histograms
+    for (rep in 1:n_reps){
+        df <- models[[rep]]$data
+        df <- df[df$dB > 0,]
+        df_min_db <- min(df$dB, na.rm=TRUE)
+        df_max_db <- max(df$dB, na.rm=TRUE)
+        if (df_min_db < min_db){min_db <- df_min_db}
+        if (df_max_db > max_db){max_db <- df_max_db}
     }
     
-    plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
-        geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.5, position="identity") + 
-        scale_fill_manual(values=state_colors) + 
-        {if(include_means)geom_vline(xintercept=mean_1, size=1.5, color=state_colors[1])} +
-        {if(include_means)geom_vline(xintercept=mean_2, size=1.5, color=state_colors[2])} +
-        xlim(xlims) + 
-        labs(title=plt_title, x="Sound Intensity (dB)") + 
-        theme(plot.title=element_text(hjust=0.5),
-              legend.title=element_blank(),
-              panel.background=element_blank())
+    xlims <- c(min_db, max_db)
     
-    print(plt)
+    # plot the histograms
+    for (rep in 1:n_reps){
+        df <- models[[rep]]$data
+        
+        df <- df[df$dB > 0,]
+        df$Names <- "exploratory"
+        df[df$States == 2, "Names"] <- "encamped"
+        df$Names <- factor(df$Names, levels=c("exploratory", "encamped"))
+        
+        plt_title <- paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions")
+        
+        if (include_means){
+            mean_1 <- mean(df[df$States == 1, "dB"], na.rm=TRUE)
+            mean_2 <- mean(df[df$States == 2, "dB"], na.rm=TRUE)
+            plt_title <-paste0(plt_title, " (with mean lines)")
+        }
+        
+        plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
+            geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.5, position="identity") + 
+            scale_fill_manual(values=state_colors) + 
+            {if(include_means)geom_vline(xintercept=mean_1, size=1.5, color=state_colors[1])} +
+            {if(include_means)geom_vline(xintercept=mean_2, size=1.5, color=state_colors[2])} +
+            xlim(xlims) + 
+            labs(title=plt_title, x="Sound Intensity (dB)") + 
+            theme(plot.title=element_text(hjust=0.5),
+                  legend.title=element_blank(),
+                  panel.background=element_blank())
+        
+        if (show_plot){
+            print(plt)
+        }     
+        
+        if (!is.na(save_path)){
+            ggsave(paste0(save_path, "Repetition ", rep, " dB Histogram by State (", ba, ").png"))
+        }
+    }
 }
 
-db.means.plot <- function(models, state_colors=c("#E69F00", "#56B4E9")){
+db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), show_plot=TRUE, 
+                          save_path=NA){
     # plots the means of dB levels experienced in different states
+    
+    if (is.na(ba)){stop("Specify the before/after period in 'ba' argument.")}
     
     state_1_means <- c()
     state_2_means <- c()
     
     for (i in 1:length(models)){
         df <- models[[i]]$data
-        state_1_means[i] <- mean(df[df$dB > 0 & df$States == 1, "dB"])
-        state_2_means[i] <- mean(df[df$dB > 0 & df$States == 2, "dB"])
+        state_1_means[i] <- mean(df[df$dB > 0 & df$States == 1, "dB"], na.rm=TRUE)
+        state_2_means[i] <- mean(df[df$dB > 0 & df$States == 2, "dB"], na.rm=TRUE)
     }
     
     diff_vec <- state_1_means - state_2_means
@@ -165,7 +200,7 @@ db.means.plot <- function(models, state_colors=c("#E69F00", "#56B4E9")){
     df_means <- data.frame(diff_vec, sign(diff_vec))
     colnames(df_means) <- c("Difference", "Sign")
     
-    df_means$Namess <- "encamped"
+    df_means$Names <- "encamped"
     df_means[df_means$Sign > 0, "Names"] <- "exploratory"
     df_means$Sign <- factor(df_means$Sign)
     df_means$States <- factor(df_means$Names, levels=c("exploratory", "encamped"))
@@ -182,6 +217,12 @@ db.means.plot <- function(models, state_colors=c("#E69F00", "#56B4E9")){
               legend.title=element_blank(),
               panel.background=element_blank())
     
-    print(plt)
+    if (show_plot){
+        print(plt)
+    }     
+    
+    if (!is.na(save_path)){
+        ggsave(paste0(save_path, "Difference Between Mean dB by State.png"))
+    }
 }
     
