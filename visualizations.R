@@ -4,7 +4,7 @@ library(momentuHMM)
 
 proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
-                             state_colors=c("#56B4E9", "#E69F00")){
+                             state_colors=c("#E69F00", "#56B4E9")){
     # Generates plots for each trial with the relative proportions of behavioral states; the
     # argument "ba" is the time period considered before/after the sound.
     
@@ -57,12 +57,12 @@ proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save
 
         plt <- ggplot(data, aes(x=Rep, y=States, fill=factor(States))) + 
             geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
-            scale_fill_manual(values=state_colors) +
+            scale_fill_manual(values=state_colors, labels=state_names) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
             labs(title=paste0("Trial ", trial, " Behavioral States (", ba, ")"), x="Repetition Number",
-                 y="Proportion", fill=state_names) +
+                 y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
               legend.title=element_blank(),
               panel.grid.major=element_blank(),
@@ -112,7 +112,6 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
     
     print(plt)
 }
-
 
 db.histogram <- function(df, rep, bins=NA, binwidth=1, state_colors=c("#E69F00", "#56B4E9"), 
                           xlims=c(125, 175), include_means=FALSE){
@@ -185,7 +184,4 @@ db.means.plot <- function(models, state_colors=c("#E69F00", "#56B4E9")){
     
     print(plt)
 }
-    
-    
-    
     

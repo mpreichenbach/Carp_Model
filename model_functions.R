@@ -20,6 +20,28 @@ library(viridis)
 library(hms)
 
 
+fix.states <- function(models, exp_enc = c(1, 2)){
+    # given the models vector, this ensures that the state with greater mean step length is 
+    # consistently named "exploratory". The fitting process seems to assign that label to the state
+    # with greater step length often, but not always.
+    
+    n_reps <- length(models)
+    
+    for (rep in 1:n_reps){
+        df <- models[[rep]]$data
+        step_1 <- mean(df[df$States == 1, c("step")], na.rm=TRUE)
+        step_2 <- mean(df[df$States == 2, c("step")], na.rm=TRUE)
+        
+        if (step_1 < step_2){
+            df$States <- ifelse(df$States == 1, 2, 1)
+        }
+        
+        models[[rep]]$data <- df
+    }
+    
+    return(models)
+}
+
 compile.crw <- function(on_time, trials = c(1, 2, 3, 4, 5), path="~/Carp-Model/Fitted CRWs"){
     # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
     
