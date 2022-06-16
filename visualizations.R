@@ -1,8 +1,9 @@
+library(gtable)
 library(tidyverse)
 library(momentuHMM)
 
 
-proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save_path=NA, 
+proportion.plots <- function(models, rep_times, ba=5, trials=1:5, show_plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
                              state_colors=c("#E69F00", "#56B4E9")){
     # Generates plots for each trial with the relative proportions of behavioral states; the
@@ -22,14 +23,15 @@ proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save
     }
 
     # compile the relevant dataframe
-    df_proportions <- data.frame(matrix(ncol=5, nrow=0))
-    colnames(df_proportions) <- c("Rep", "Trial", "States", "Names", "Diel")
+    df_proportions <- data.frame(matrix(ncol=6, nrow=0))
+    colnames(df_proportions) <- c("Time", "Rep", "Trial", "States", "Names", "Diel")
     
     for (rep in 1:n_models){
         model <- models[[rep]]
-        holder <- data.frame(matrix(ncol=5, nrow=nrow(model$data)))
-        colnames(holder) <- c("Rep", "Trial", "States", "Diel", "RepDiel")
+        holder <- data.frame(matrix(ncol=6, nrow=nrow(model$data)))
+        colnames(holder) <- c("Time", "Rep", "Trial", "States", "Diel", "RepDiel")
         
+        holder$Time <- model$data$Time
         holder$Rep <- rep
         holder$Trial <- model$data$Trial
         holder$Diel <- as.numeric(as.character(model$data$Diel))
@@ -48,23 +50,43 @@ proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save
     # make the plots
     for (trial in trials){
         data <- df_proportions[df_proportions$Trial == trial,]
+        data$BA <- "before"
         
-        # if there are both day/night 
         for (rep in 1:24){
-            if (0 %in% unique(data[data$Rep == rep, "Diel"])){
-                data[data$Rep == rep, "RepDiel"] <- 0
+            data0 <- data[data$Rep == rep,]
+            # if there are both day/night values, assign to night
+            if (0 %in% unique(data0[data0$Rep == rep, "Diel"])){
+                data0[data0$Rep == rep, "RepDiel"] <- 0
             }
+            
+            # assign before/after labels relative to on_time
+            on_time <- unique(as_hms(rep_times[rep_times$Repetition == rep, "Time"]))
+            
+            # note that hms inequalities assume the minimum time is 00:00:00; this logic fixes that
+            if (on_time == hms(0, 0, 0)){
+                data0[on_time <= as_hms(data0$Time) &
+                          as_hms(data0$Time) <= hms(0, BA, 0), "BA"] <- "after"
+            }else{
+                data0[on_time <= as_hms(data0$Time), "BA"] <- "after"
+            }
+            data[data$Rep == rep,] <- data0
         } 
+        
         data$RepDiel <- as.factor(data$RepDiel)
-
-        plt <- ggplot(data, aes(x=Rep, y=States, fill=factor(States))) + 
+        
+        # subset into before/after on_time
+        data_before <- data[data$BA == "before",]
+        data_after <- data[data$BA == "after",]
+        
+        # first plot, before on_time
+        plt_before <- ggplot(data_before, aes(x=Rep, y=States, fill=factor(States))) + 
             geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
             scale_fill_manual(values=state_colors, labels=state_names) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, ")"), x="Repetition Number",
-                 y="Proportion") +
+            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, " before)"), 
+                 x="Repetition Number", y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
               legend.title=element_blank(),
               panel.grid.major=element_blank(),
@@ -72,12 +94,37 @@ proportion.plots <- function(models, ba="5min", trials=1:5, show_plot=TRUE, save
               panel.background=element_blank(),
               axis.line=element_line(colour="black"))
         
-        if (show_plot){
-            print(plt)
-        }     
+        # second plot, after on_time
+        plt_after <- ggplot(data_after, aes(x=Rep, y=States, fill=factor(States))) + 
+            geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
+            scale_fill_manual(values=state_colors, labels=state_names) +
+            coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
+            scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
+            scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
+            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, " after)"), 
+                 x="Repetition Number", y="Proportion") +
+            theme(plot.title=element_text(hjust = 0.5), 
+                  legend.title=element_blank(),
+                  panel.grid.major=element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.background=element_blank(),
+                  axis.line=element_line(colour="black"))
         
+        # bring the plots together into one figure (or gtable)
+        g_before <- ggplotGrob(plt_before)
+        g_after <- ggplotGrob(plt_after)
+        g <- rbind(g_before, g_after, size="first")
+        g$widths <- unit.pmax(g_before$widths, g_after$widths)
+
+        # possibly print the gtable
+        if (show_plot){
+            grid.newpage()
+            grid.draw(g)
+        }
+        
+        # possibly save the object g
         if (!is.na(save_path)){
-            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, ").png"))
+            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, ").png"), plot=g)
         }
     }
 }
