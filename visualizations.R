@@ -1,9 +1,10 @@
+library(grid)
 library(gtable)
 library(tidyverse)
 library(momentuHMM)
 
 
-proportion.plots <- function(models, rep_times, ba=5, trials=1:5, show_plot=TRUE, save_path=NA, 
+proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRUE, save_path=NA, 
                              state_names=c("exploratory", "encamped"), 
                              state_colors=c("#E69F00", "#56B4E9")){
     # Generates plots for each trial with the relative proportions of behavioral states; the
@@ -124,7 +125,7 @@ proportion.plots <- function(models, rep_times, ba=5, trials=1:5, show_plot=TRUE
         
         # possibly save the object g
         if (!is.na(save_path)){
-            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, ").png"), plot=g)
+            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, "min).png"), plot=g)
         }
     }
 }
