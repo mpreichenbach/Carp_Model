@@ -199,7 +199,7 @@ db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE,
         df[df$States == 2, "Names"] <- "encamped"
         df$Names <- factor(df$Names, levels=c("exploratory", "encamped"))
         
-        plt_title <- paste0("Repetition ", rep, ": Sound Intensity Histogram at Fish Positions")
+        plt_title <- paste0("Rep ", rep, ": dB Histogram at Fish Positions")
         
         if (include_means){
             mean_1 <- mean(df[df$States == 1, "dB"], na.rm=TRUE)
@@ -210,8 +210,8 @@ db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE,
         plt <- ggplot(data=df, aes(x=dB, fill=Names)) + 
             geom_histogram(aes(y=..density..), binwidth=binwidth, alpha=0.5, position="identity") + 
             scale_fill_manual(values=state_colors) + 
-            {if(include_means)geom_vline(xintercept=mean_1, size=1.5, color=state_colors[1])} +
-            {if(include_means)geom_vline(xintercept=mean_2, size=1.5, color=state_colors[2])} +
+            {if(include_means)geom_vline(xintercept=mean_1, size=1, color=state_colors[1])} +
+            {if(include_means)geom_vline(xintercept=mean_2, size=1, color=state_colors[2])} +
             xlim(xlims) + 
             labs(title=plt_title, x="Sound Intensity (dB)") + 
             theme(plot.title=element_text(hjust=0.5),
@@ -223,7 +223,7 @@ db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE,
         }     
         
         if (!is.na(save_path)){
-            ggsave(paste0(save_path, "Repetition ", rep, " dB Histogram by State (", ba, ").png"))
+            ggsave(paste0(save_path, "Rep ", rep, " dB Histogram by State (", ba, "min).png"))
         }
     }
 }
