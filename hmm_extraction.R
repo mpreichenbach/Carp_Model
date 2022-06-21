@@ -54,6 +54,38 @@ compile.aic <- function(path, verbose=FALSE){
     return(aic_holder)
 }
 
+
+top.formulas <- function(model_lists, model_list_names=c("5min", "30min")){
+    # takes the top formulas in different b/a time frames, and merges them by repetition. Allows for
+    # comparison of which covariates are more effective in the long/short runs. For example, if
+    # model_lists=c(top_hmms_5min, top_hmms_30), this will output a dataframe with a column for each
+    # input list.
+    
+    # check whether the model_list entries have the name number of models
+    n_model_lists <- length(model_lists)
+    n_models <- c()
+    for (n in 1:n_model_lists){
+        n_models <- append(n_models, length(model_lists[[n]]))
+    }
+    if (length(unique(n_models)) != 1){stop("Each entry in model_lists must be the same length.")}
+    
+    n_reps <- length(model_lists[[1]])
+    
+    # create and fill comparison dataframe
+    df <- data.frame(matrix(nrow=n_reps, ncol=length(model_lists) + 1))
+    colnames(df) <- append("Repetition", model_list_names)
+    df$Repetition <- 1:n_reps
+    
+    for (rep in 1:n_reps){
+        for (i in 1:length(model_list_names)){
+            name <- model_list_names[i]
+            df[rep, name] <- gsub(" ", "", deparse1(model_lists[[i]][[rep]]$conditions$formula))
+        }
+    }
+    return(df)
+}
+
+
 top.models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE){
     ##### after running compile.AIC above, this function extracts the top model, and adds it to a
     ##### list indexed by the repetition number. The argument aic_scores_path should point to the
