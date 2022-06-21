@@ -4,8 +4,8 @@ library(tidyverse)
 library(momentuHMM)
 
 
-proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRUE, save_path=NA, 
-                             state_names=c("exploratory", "encamped"), 
+proportion.plots <- function(models, rep_times, ba=NA, treatment=NA, trials=1:5, show_plot=TRUE, 
+                             save_path=NA, state_names=c("exploratory", "encamped"), 
                              state_colors=c("#E69F00", "#56B4E9")){
     # Generates plots for each trial with the relative proportions of behavioral states; the
     # argument "ba" is the time period considered before/after the sound.
@@ -29,21 +29,26 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
     
     for (rep in 1:n_models){
         model <- models[[rep]]
-        holder <- data.frame(matrix(ncol=6, nrow=nrow(model$data)))
-        colnames(holder) <- c("Time", "Rep", "Trial", "States", "Diel", "RepDiel")
+        df <- model$data
         
-        holder$Time <- model$data$Time
-        holder$Rep <- rep
-        holder$Trial <- model$data$Trial
-        holder$Diel <- as.numeric(as.character(model$data$Diel))
-        holder$RepDiel <- as.factor(model$data$Diel)
-        
-        if ("States" %in% colnames(model$data)){
-            holder$States <- model$data$States
-        }else{
-            holder$States <- viterbi(model)
+        # calculate behavioral states if not included already
+        if (!("States" %in% colnames(df))){
+            df$States <- viterbi(model)
             print(paste0("Finished decoding state sequence for Repetition ", rep, "."))
         }
+        
+        # subset to the specified treatment
+        if (!is.na(treatment)){df <- df[df$Treatment == treatment,]}
+        
+        holder <- data.frame(matrix(ncol=6, nrow=nrow(df)))
+        colnames(holder) <- c("Time", "Rep", "Trial", "States", "Diel", "RepDiel")
+        
+        holder$Time <- df$Time
+        holder$Rep <- rep
+        holder$Trial <- df$Trial
+        holder$States <- df$States
+        holder$Diel <- as.numeric(as.character(df$Diel))
+        holder$RepDiel <- as.factor(df$Diel)
         
         df_proportions <- rbind(df_proportions, holder)
     }
@@ -80,14 +85,21 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
         data_after <- data[data$BA == "after",]
         
         # first plot, before on_time
+        if (is.na(treatment)){
+            before_title <- paste0("Trial ", trial, " Behavioral States (", ba, 
+                                  "min before)")
+        }else{
+            before_title <- paste0("Trial ", trial, " ", treatment, " Behavioral States (", ba, 
+                                  "min before)")
+        }
+        
         plt_before <- ggplot(data_before, aes(x=Rep, y=States, fill=factor(States))) + 
             geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
             scale_fill_manual(values=state_colors, labels=state_names) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, "min before)"), 
-                 x="Repetition Number", y="Proportion") +
+            labs(title=before_title, x="Repetition Number", y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
               legend.title=element_blank(),
               panel.grid.major=element_blank(),
@@ -96,14 +108,21 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
               axis.line=element_line(colour="black"))
         
         # second plot, after on_time
+        if (is.na(treatment)){
+            after_title <- paste0("Trial ", trial, " Behavioral States (", ba, 
+                                  "min after)")
+        }else{
+            after_title <- paste0("Trial ", trial, " ", treatment, " Behavioral States (", ba, 
+                                  "min after)")
+        }
+        
         plt_after <- ggplot(data_after, aes(x=Rep, y=States, fill=factor(States))) + 
             geom_bar(aes(alpha=factor(RepDiel)), position="fill", stat="identity") +
             scale_fill_manual(values=state_colors, labels=state_names) +
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, "min after)"), 
-                 x="Repetition Number", y="Proportion") +
+            labs(title=after_title, x="Repetition Number", y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
                   legend.title=element_blank(),
                   panel.grid.major=element_blank(),
@@ -125,7 +144,13 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
         
         # possibly save the object g
         if (!is.na(save_path)){
-            ggsave(paste0(save_path, "Trial ", trial, " State Proportions (", ba, "min).png"), plot=g)
+            if (is.na(treatment)){
+                ptitle <- paste0("Trial ", trial, " State Proportions (", ba, "min).png")
+            }else{
+                ptitle <- paste0(treatment, " ", "Trial ", trial, " State Proportions (",
+                                 ba, "min).png")
+            }
+            ggsave(file.path(save_path, ptitle), plot=g)
         }
     }
 }
