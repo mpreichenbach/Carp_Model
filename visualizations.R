@@ -11,7 +11,7 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
     # argument "ba" is the time period considered before/after the sound.
     
     if (is.na(ba)){stop("Specify the before/after period in 'ba' argument.")}
-    
+
     # make sure that all trials have data
     n_models <- length(models)
     for (i in 1:length(models)){
@@ -63,10 +63,10 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
             # assign before/after labels relative to on_time
             on_time <- unique(as_hms(rep_times[rep_times$Repetition == rep, "Time"]))
             
-            # note that hms inequalities assume the minimum time is 00:00:00; this logic fixes that
+            # note that hms inequalities assume the minimum time is 00:00:00; this logic deals with that
             if (on_time == hms(0, 0, 0)){
                 data0[on_time <= as_hms(data0$Time) &
-                          as_hms(data0$Time) <= hms(0, BA, 0), "BA"] <- "after"
+                          as_hms(data0$Time) <= hms(0, ba, 0), "BA"] <- "after"
             }else{
                 data0[on_time <= as_hms(data0$Time), "BA"] <- "after"
             }
@@ -86,7 +86,7 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, " before)"), 
+            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, "min before)"), 
                  x="Repetition Number", y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
               legend.title=element_blank(),
@@ -102,7 +102,7 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
             coord_cartesian(xlim=c(1, 24), ylim=c(0, 1)) +
             scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
             scale_alpha_manual(values=c("0"=0.5, "1"=1.0), guide="none") +
-            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, " after)"), 
+            labs(title=paste0("Trial ", trial, " Behavioral States (", ba, "min after)"), 
                  x="Repetition Number", y="Proportion") +
             theme(plot.title=element_text(hjust = 0.5), 
                   legend.title=element_blank(),

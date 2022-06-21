@@ -54,7 +54,7 @@ compile.aic <- function(path, verbose=FALSE){
     return(aic_holder)
 }
 
-top.models <- function(aic_scores_path, fitted_hmm_path, reps=1:24){
+top.models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE){
     ##### after running compile.AIC above, this function extracts the top model, and adds it to a
     ##### list indexed by the repetition number. The argument aic_scores_path should point to the
     ##### directory containing the output of compile.AIC, and fitted_hmm_path should point to the
@@ -76,8 +76,7 @@ top.models <- function(aic_scores_path, fitted_hmm_path, reps=1:24){
                 top_hmms[[rep]] <- fitted_models[[mod]]
             }
         }
-        print(paste0("Repetition ", rep, " complete."))
+        if (verbose){print(paste0("Repetition ", rep, " complete."))}
     }
-    
     return(top_hmms)
 }
