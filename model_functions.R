@@ -92,7 +92,7 @@ convert.coords <- function(df,
 
 diel.column <- function(df, time_name="Time", dn_vals=c(0, 1), 
                         latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
-    # this outputs a column of diel values
+    # this outputs a column of diel values (should be rewritten to output df with the Diel column).
     
     time_df <- data.frame(matrix(dn_vals[2], ncol=2, nrow=nrow(df)))
     colnames(time_df) <- c(time_name, "Diel")
@@ -114,6 +114,41 @@ diel.column <- function(df, time_name="Time", dn_vals=c(0, 1),
     time_df[,time_name] <- NULL
     
     return(pull(time_df))
+}
+
+
+db.column <- function(crw, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
+                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
+    # this function performs autokriging on sound intensity data, and predicts dB levels at the 
+    # appropriate coordinates in crw.
+    # "crw" should be the output (or subset thereof) of the fit.crw function, and the files in
+    # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
+    # PondXXTreatment, i.e., Pond27ChirpSquare.
+    
+    df_holder <- data.frame(matrix(ncol = 3, nrow = 0))
+    colnames(df_holder) <- c("x", "y", "dB")
+    
+    crw$dB <- 0
+
+    for (trial in trials){
+        for (pond in ponds){
+            tmnt <- treatment.key(trial, pond)
+            if (tmnt == "Control"){next}
+            db_data <- read.csv(file.path(db_data_path, paste0("Pond", pond, tmnt, ".csv")))
+            sub_data <- crw[crw$Trial == trial & crw$Pond == pond,]
+            if (nrow(sub_data) == 0){
+                print(paste0("Trial ", trial, ", Pond ", pond, " have no data."))
+                next
+            }
+            sub_data$dB <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
+            
+            df_holder <- rbind(df_holder, sub_data)
+        }
+    }
+    if (nrow(crw) != nrow(df_holder)){print("Number of rows of input/output data do not match, 
+                                            when they should.")}
+    
+    return(df_holder)
 }
 
 
@@ -781,28 +816,28 @@ fit.model.list <- function(list_element){
 }
 
 # multiprocessing
-# rep <- readRDS("D:/Carp-Model/Fitted HMMs/30min BA/Repetition 16/0 covariates.RDS")[[1]]$data
-# for (i in c( 4, 5, 6)){
-#   frm <- get.formulas(i)
-# 
-#   frm_list <- list()
-#   for (j in 1:length(frm)){
-#     frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
-#   }
-# 
-#   cl <- makeCluster(10)
-#   clusterExport(cl, c("fit.model.list", "fit.model"))
-#   clusterEvalQ(cl, library(momentuHMM))
-# 
-#   tic = Sys.time()
-#   hmm <- parLapplyLB(cl, frm_list, fit.model.list)
-#   toc = Sys.time()
-#   print(paste0("Fitting models with ", i, " covariates is complete."))
-#   print(toc - tic)
-# 
-#   saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/30min BA/Repetition 16/", i, " covariates.RDS"))
-#   stopCluster(cl)
-# }
+rep <- readRDS("D:/Carp-Model/Fitted HMMs/30min BA/Repetition 16/0 covariates.RDS")[[1]]$data
+for (i in c( 4, 5, 6)){
+  frm <- get.formulas(i)
+
+  frm_list <- list()
+  for (j in 1:length(frm)){
+    frm_list[[j]] <- list("formula"=frm[[j]], "data"=rep)
+  }
+
+  cl <- makeCluster(10)
+  clusterExport(cl, c("fit.model.list", "fit.model"))
+  clusterEvalQ(cl, library(momentuHMM))
+
+  tic = Sys.time()
+  hmm <- parLapplyLB(cl, frm_list, fit.model.list)
+  toc = Sys.time()
+  print(paste0("Fitting models with ", i, " covariates is complete."))
+  print(toc - tic)
+
+  saveRDS(hmm, paste0("~/Carp-Model/Fitted HMMs/30min BA/Repetition 16/", i, " covariates.RDS"))
+  stopCluster(cl)
+}
 
 
 ##### this code will add a column of interpolated dB levels to the fitted CRW files
