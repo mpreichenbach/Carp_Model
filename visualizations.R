@@ -130,6 +130,7 @@ proportion.plots <- function(models, rep_times, ba=NA, trials=1:5, show_plot=TRU
     }
 }
 
+
 aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_cov=NA){
     # makes a line graph rescaled so that the best model is at 0, and subsequent points increase by
     # their DeltaAIC value. The argument disp_cov should be one of the strings"dB", "Temp", "Pond", 
@@ -162,6 +163,7 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
     
     print(plt)
 }
+
 
 db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE, 
                          show_plot=TRUE, save_path=NA, state_names=c("exploratory", "encamped"), 
@@ -227,6 +229,7 @@ db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE,
         }
     }
 }
+
 
 db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), show_plot=TRUE, 
                           save_path=NA){

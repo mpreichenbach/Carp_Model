@@ -90,27 +90,6 @@ convert.coords <- function(df,
 }
 
 
-diel.column <- function(.data, time_name="Time", dn_vals=c(0, 1), 
-                        latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
-    # this outputs a column of diel values (should be rewritten to output df with the Diel column).
-    
-    .data$Diel <- dn_vals[2]
-    df_dates <- unique(as.Date(.data[,time_name]))
-    
-    for (the_date in df_dates){
-        the_date <- as.Date(the_date)
-        sunRS <- sunrise.set(latlong[1], latlong[2],
-                             paste0(year(the_date), '/', month(the_date), '/', day(the_date)),
-                             timezone=timezone)
-        sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
-        sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
-        
-        .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- dn_vals[1]
-    }
-    
-    return(.data)
-}
-
 
 db.column <- function(.data, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
                       crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
@@ -146,6 +125,27 @@ db.column <- function(.data, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
     return(df_holder)
 }
 
+
+diel.column <- function(.data, time_name="Time", dn_vals=c(0, 1), 
+                        latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
+    # this outputs a column of diel values (should be rewritten to output df with the Diel column).
+    
+    .data$Diel <- dn_vals[2]
+    df_dates <- unique(as.Date(.data[,time_name]))
+    
+    for (the_date in df_dates){
+        the_date <- as.Date(the_date)
+        sunRS <- sunrise.set(latlong[1], latlong[2],
+                             paste0(year(the_date), '/', month(the_date), '/', day(the_date)),
+                             timezone=timezone)
+        sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
+        sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
+        
+        .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- dn_vals[1]
+    }
+    
+    return(.data)
+}
 
 fit.krig <- function(sound_data, pred_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
@@ -533,6 +533,7 @@ plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, m
     
     return(plot_list)
 }
+
 
 pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along

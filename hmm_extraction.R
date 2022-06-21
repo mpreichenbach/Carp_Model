@@ -4,7 +4,7 @@ library(dplyr)
 
 ##### These functions extract info from the fitted HMM models
 
-compile.AIC <- function(path, verbose=FALSE){
+compile.aic <- function(path, verbose=FALSE){
     # extract all AIC scores from files in Repetition X folders
     tic <- Sys.time()
     
