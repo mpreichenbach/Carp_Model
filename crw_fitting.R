@@ -1,23 +1,24 @@
 library(momentuHMM)
 library(parallel)
 library(tidyverse)
+source('model_function.R')
 
 
-fit.crw <- function(telemetry, 
-                    tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
-                    crw_colnames=c('ID', 'Time', 'x', 'y'),
-                    telemetryCovs=c('Trial', 'Pond'),
-                    timestep="6 sec",
-                    id_batch_size=10,
-                    inits=c(2, 0.001),  
-                    retry_fits=100, 
-                    attempts=100, 
-                    doParallel = TRUE){
+crw.prediction <- function(.data, 
+                           tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
+                           crw_colnames=c('ID', 'Time', 'x', 'y'),
+                           telemetryCovs=c('Trial', 'Pond'),
+                           timestep="6 sec",
+                           id_batch_size=10,
+                           inits=c(2, 0.001),  
+                           retry_fits=100, 
+                           attempts=100, 
+                           doParallel = TRUE){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
     # remove rows with missing locations, subset and rename columns
-    tel <- telemetry %>%
+    tel <- .data %>%
         select(tel_colnames) %>%
         drop_na()
         
@@ -64,63 +65,18 @@ fit.crw <- function(telemetry,
     return(ModDat)
 }
 
-compile.crw <- function(on_time, trials = c(1, 2, 3, 4, 5), path="~/Carp-Model/Fitted CRWs"){
-    # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
-    
-    dt_str <- time.to.str(on_time)
-    date_str <- as.character(date(on_time))
-    
-    if  (date_str %in% c("2018-06-11", "2018-06-12", "2018-06-13", "2018-06-14")){
-        trial <- 1
-    }else if (date_str %in% c("2018-06-26", "2018-06-27", "2018-06-28", "2018-06-29")){
-        trial <- 2
-    }else if (date_str %in% c("2018-07-10", "2018-07-11", "2018-07-12", "2018-07-13")){
-        trial <- 3
-    }else if (date_str %in% c("2018-07-24", "2018-07-25", "2018-07-26", "2018-07-27")){
-        trial <- 4
-    }else if (date_str %in% c("2018-08-07", "2018-08-08", "2018-08-09", "2018-08-10")){
-        trial <- 5
-    }
-    
-    pond_files <- list.files(path = file.path(path, paste("Trial", trial), dt_str), full.names=TRUE)
-    load(file=pond_files[1])
-    df <- ModDat
-    rm(ModDat)
-    for (i in 2:length(pond_files)){
-        load(pond_files[i])
-        df0 <- ModDat
-        rm(ModDat)
-        df <- rbind(df, df0)
-    }
-    
-    return(df)
-}
 
-convert.coords <- function(df, 
-                           input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
-                           output_crs = CRS("+proj=longlat +datum=WGS84")){
-    # takes a dataframe of x,y (Easting, Northing) points and converts them to output projection.
-    
-    x <- colnames(df)[1]
-    y <- colnames(df)[2]
-    coordinates(df) <- ~x + y
-    proj4string(df) <- input_crs
-    
-    df_out <- as.data.frame(spTransform(df, output_crs)@coords)
-    
-    return(df_out)
-}
-
-db.column <- function(.data, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
-                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
-    # this function performs autokriging on sound intensity data, and predicts dB levels at the 
-    # appropriate coordinates in crw.
-    # "crw" should be the output (or subset thereof) of the fit.crw function, and the files in
+add.db <- function(.data, 
+                   db_data_path,
+                   colname="dB",
+                   trials=1:5, 
+                   ponds=c(26, 27, 30, 31),
+                   crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
+    # this function performs autokriging on sound intensity data, predicts dB levels at the 
+    # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
+    # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
     # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
     # PondXXTreatment, i.e., Pond27ChirpSquare.
-    
-    df_holder <- data.frame(matrix(ncol = 3, nrow = 0))
-    colnames(df_holder) <- c("x", "y", "dB")
     
     .data$dB <- 0
     
@@ -129,20 +85,17 @@ db.column <- function(.data, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
             tmnt <- treatment.key(trial, pond)
             if (tmnt == "Control"){next}
             db_data <- read.csv(file.path(db_data_path, paste0("Pond", pond, tmnt, ".csv")))
-            sub_data <- .data[.data$Trial == trial & crw$Pond == pond,]
+            sub_data <- .data[.data$Trial == trial & .data$Pond == pond,]
             if (nrow(sub_data) == 0){
-                print(paste0("Trial ", trial, ", Pond ", pond, " have no data."))
+                print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
                 next
             }
-            sub_data$dB <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
-            
-            df_holder <- rbind(df_holder, sub_data)
+            .data[.data$Trial == trial & .data$Pond == pond, "dB"] <- fit.krig(db_data, 
+                                                                               sub_data[, c("x", "y")])$dB
         }
     }
-    if (nrow(.data) != nrow(df_holder)){print("Number of rows of input/output data do not match, 
-                                            when they should.")}
-    
-    return(df_holder)
+
+    return(.data)
 }
 
 

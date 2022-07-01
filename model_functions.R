@@ -18,6 +18,22 @@ library(viridis)
 library(hms)
 
 
+convert.coords <- function(df, 
+                           input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
+                           output_crs = CRS("+proj=longlat +datum=WGS84")){
+    # takes a dataframe of x,y (Easting, Northing) points and converts them to output projection.
+    
+    x <- colnames(df)[1]
+    y <- colnames(df)[2]
+    coordinates(df) <- ~x + y
+    proj4string(df) <- input_crs
+    
+    df_out <- as.data.frame(spTransform(df, output_crs)@coords)
+    
+    return(df_out)
+}
+
+
 fix.states <- function(models, exp_enc = c(1, 2)){
     # given the models vector, this ensures that the state with greater mean step length is 
     # consistently named "exploratory". The fitting process seems to assign that label to the state
