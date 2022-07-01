@@ -1,30 +1,65 @@
+library(momentuHMM)
+library(parallel)
 library(tidyverse)
 
 
-fit.crw <- function(telemetry, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
-                    attempts=100, doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
+fit.crw <- function(telemetry, 
+                    tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
+                    crw_colnames=c('ID', 'Time', 'x', 'y'),
+                    telemetryCovs=c('Trial', 'Pond'),
+                    timestep="6 sec",
+                    id_batch_size=10,
+                    inits=c(2, 0.001),  
+                    retry_fits=100, 
+                    attempts=100, 
+                    doParallel = TRUE){
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
-    #subset dataset to just time before and after specified time interval
-    crawldat <- subset(telemetry, !is.na(Easting))
+    # remove rows with missing locations, subset and rename columns
+    tel <- telemetry %>%
+        select(tel_colnames) %>%
+        drop_na()
+        
+    colnames(tel) <- crw_colnames
     
-    rawdat <- crawldat[, c("ID","Easting","Northing","Time")]
-    colnames(rawdat)<-c('ID','x','y','Time')
+    # get unique IDs to define batches for crawlWrap
+    ids <- unique(tel[,crw_colnames[1]])
     
-    #Fit the correlated random walk Model
-    tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
-                          theta=inits, fixPar=c(NA, NA), Time.name = "Time", retryFits = retry_fits,
-                          attempts=attempts, doParallel = doParallel, ncores = ncores)
+    # crawlWrap does best with fewer tracks to fit; this generates smaller batches of tracks
+    batch_counter <- 0
+    predictions <- data.frame(matrix(nrow=0, ncol=ncol(tel)))
+    colnames(predictions) <- colnames(tel)
     
-    # only keep the necessary covariates
-    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel", "Temp")]
-    
-    # merge the CRW data with covariate info from telemetry
-    tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
+    while (batch_counter < length(ids)){
+        batch_ids <- ids[(1 + batch_counter):(id_batch_size + batch_counter)]
+        batch_tel <- tel[tel[[crw_colnames[1]]] %in% batch_ids,]
+        
+        batch_crw <- crawlWrap(obsData=batch_tel, 
+                               timeStep=timestep,
+                               theta=inits,
+                               fixPar=c(NA, NA),
+                               Time.name = crw_colnames[2],
+                               retryFits = retry_fits,
+                               attempts=attempts,
+                               doParallel = doParallel,
+                               ncores = min(id_batch_size, ceiling(0.75 * detectCores()))
+                               )
+        
+        batch_predictions <- batch_crw$crwPredict
+        
+        # extract the covariates from telemetry to merge with crw predictions
+        covData <- telemetry[, c(crw_colnames[1:2], telemetryCovs)]
+        
+        # merge covariates with predictions
+        batch_predictions <- merge(batch_predictions, covData, by=crw_colnames[1:2])
+        
+        predictions <- rbind(predictions, batch_predictions)
+        batch_counter <- batch_counter + id_batch_size
+    }
     
     #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel", "Temp"))
+    ModDat <- prepData(data=predictions, covNames=covariates)
     
     return(ModDat)
 }
