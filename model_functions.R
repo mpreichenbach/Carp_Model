@@ -43,37 +43,6 @@ fix.states <- function(models, exp_enc = c(1, 2)){
     
 }
 
-compile.crw <- function(on_time, trials = c(1, 2, 3, 4, 5), path="~/Carp-Model/Fitted CRWs"){
-    # compiles various fitted random walks into a single dataset, to be used for HMM fitting.
-    
-    dt_str <- time.to.str(on_time)
-    date_str <- as.character(date(on_time))
-    
-    if  (date_str %in% c("2018-06-11", "2018-06-12", "2018-06-13", "2018-06-14")){
-        trial <- 1
-    }else if (date_str %in% c("2018-06-26", "2018-06-27", "2018-06-28", "2018-06-29")){
-        trial <- 2
-    }else if (date_str %in% c("2018-07-10", "2018-07-11", "2018-07-12", "2018-07-13")){
-        trial <- 3
-    }else if (date_str %in% c("2018-07-24", "2018-07-25", "2018-07-26", "2018-07-27")){
-        trial <- 4
-    }else if (date_str %in% c("2018-08-07", "2018-08-08", "2018-08-09", "2018-08-10")){
-        trial <- 5
-    }
-    
-    pond_files <- list.files(path = file.path(path, paste("Trial", trial), dt_str), full.names=TRUE)
-    load(file=pond_files[1])
-    df <- ModDat
-    rm(ModDat)
-    for (i in 2:length(pond_files)){
-        load(pond_files[i])
-        df0 <- ModDat
-        rm(ModDat)
-        df <- rbind(df, df0)
-    }
-
-    return(df)
-}
 
 convert.coords <- function(df, 
                            input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
@@ -90,83 +59,6 @@ convert.coords <- function(df,
     return(df_out)
 }
 
-
-
-db.column <- function(.data, db_data_path, trials=1:5, ponds=c(26, 27, 30, 31),
-                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
-    # this function performs autokriging on sound intensity data, and predicts dB levels at the 
-    # appropriate coordinates in crw.
-    # "crw" should be the output (or subset thereof) of the fit.crw function, and the files in
-    # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
-    # PondXXTreatment, i.e., Pond27ChirpSquare.
-    
-    df_holder <- data.frame(matrix(ncol = 3, nrow = 0))
-    colnames(df_holder) <- c("x", "y", "dB")
-    
-    .data$dB <- 0
-
-    for (trial in trials){
-        for (pond in ponds){
-            tmnt <- treatment.key(trial, pond)
-            if (tmnt == "Control"){next}
-            db_data <- read.csv(file.path(db_data_path, paste0("Pond", pond, tmnt, ".csv")))
-            sub_data <- .data[.data$Trial == trial & crw$Pond == pond,]
-            if (nrow(sub_data) == 0){
-                print(paste0("Trial ", trial, ", Pond ", pond, " have no data."))
-                next
-            }
-            sub_data$dB <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
-            
-            df_holder <- rbind(df_holder, sub_data)
-        }
-    }
-    if (nrow(.data) != nrow(df_holder)){print("Number of rows of input/output data do not match, 
-                                            when they should.")}
-    
-    return(df_holder)
-}
-
-
-diel.column <- function(.data, time_name="Time", dn_vals=c(0, 1), 
-                        latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
-    # this outputs a column of diel values (should be rewritten to output df with the Diel column).
-    
-    .data$Diel <- dn_vals[2]
-    df_dates <- unique(as.Date(.data[,time_name]))
-    
-    for (the_date in df_dates){
-        the_date <- as.Date(the_date)
-        sunRS <- sunrise.set(latlong[1], latlong[2],
-                             paste0(year(the_date), '/', month(the_date), '/', day(the_date)),
-                             timezone=timezone)
-        sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
-        sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
-        
-        .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- dn_vals[1]
-    }
-    
-    return(.data)
-}
-
-fit.krig <- function(sound_data, pred_data, 
-                     crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
-    # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
-    # x, y, and dB.
-    
-    sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
-    sp_pred_data <- SpatialPoints(as.data.frame(pred_data), proj4string = CRS(crs_string))
-    
-    fit_KRIG <- automap::autoKrige(
-        formula = dB ~ 1,
-        input_data = as(sf_sound, "Spatial"),
-        new_data = sp_pred_data
-    ) %>%
-        .$krige_output %>%
-        as.data.frame() %>%
-        dplyr::select(x, y, dB = var1.pred)
-
-    return(fit_KRIG)
-}
 
 correct.tags <- function(trial, pond){
     # gives a numeric vector with the correct tag codes for each trial
@@ -224,35 +116,7 @@ correct.tags <- function(trial, pond){
 }
 
 
-fit.crw <- function(telemetry, timestep="6 sec", inits=c(2, 0.001),  retry_fits=100, 
-                    attempts=100, doParallel = TRUE, ncores = ceiling(0.75 * detectCores())){
-    # this function loads sound and processed telemetry data, and fits correlated random-walks to
-    # the tracks.
-    
-    #subset dataset to just time before and after specified time interval
-    crawldat <- subset(telemetry, !is.na(Easting))
-
-    rawdat <- crawldat[, c("ID","Easting","Northing","Time")]
-    colnames(rawdat)<-c('ID','x','y','Time')
-
-    #Fit the correlated random walk Model
-    tempDat0 <- crawlWrap(obsData=rawdat, timeStep=timestep,
-                          theta=inits, fixPar=c(NA, NA), Time.name = "Time", retryFits = retry_fits,
-                          attempts=attempts, doParallel = doParallel, ncores = ncores)
-    
-    # only keep the necessary covariates
-    covDat <- telemetry[,c("ID","Time","Trial","Pond","Treatment","Sound", "Diel", "Temp")]
-    
-    # merge the CRW data with covariate info from telemetry
-    tempDat0$crwPredict <- merge(tempDat0$crwPredict, covDat, by=c("ID","Time"))
-    
-    #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=tempDat0, covNames=c("Trial", "Pond", "Treatment", "Sound", "Diel", "Temp"))
-
-    return(ModDat)
-}
-
-get.formulas <- function(nCov, include_diel=FALSE){
+get.formulas <- function(nCov){
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
     # "Trial", "Pond", "Diel", "Temp", "dB", "Treatment". Most subsets of the telemetry data
     # only have one value for diel, which will cause problems in model fitting. For these cases, use
@@ -263,94 +127,39 @@ get.formulas <- function(nCov, include_diel=FALSE){
     # it would be helpful to expand this function to allow for covariate name inputs, and an
     # n-choose-k functionality to return all possible formulas with nCov covariates.
     
-    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6, 7))){
+    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))){
         stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
     }
     
-    if (!(include_diel) & nCov == 7){
-        stop("Set include_diel to TRUE if you want formulas with 6 covariates.")
+    if (nCov == 0){
+        names <- c("~1")
+    }else if (nCov == 1){
+        names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
+    }else if (nCov == 2){
+        names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
+                   "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB+Treatment",
+                   "~dB:Treatment")
+    }else if (nCov == 3){
+        names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
+                   "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
+                   "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
+                   "~Temp+dB+Treatment", "~Temp+dB:Treatment", "~dB*Treatment")
+    }else if (nCov == 4){
+        names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
+                   "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temp+dB+Treatment",
+                   "~Trial+Temp+dB:Treatment", "~Pond+Temp+dB+Treatment", "~Pond+Temp+dB:Treatment",
+                   "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temp+dB*Treatment")
+    }else if (nCov == 5){
+        names <- c("~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
+                   "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", "~Pond+Temp+dB*Treatment")
+    }else if (nCov == 6){
+        names <- c("~Trial+Pond+Temp+dB*Treatment")
     }
     
-    if (include_diel){
-        if (nCov == 0){
-            names <- c("~1")
-        }else if (nCov == 1){
-            names <- c("~Trial", "~Pond", "~Diel", "~Temp", "~dB", "~Treatment")
-        }else if (nCov == 2){
-            names <- c("~Trial+Pond", "~Trial+Diel", "~Trial+Temp", "~Trial+dB", 
-                       "~Trial+Treatment", "~Pond+Diel", "~Pond+Temp", "~Pond+dB", "~Pond+Treatment", 
-                       "~Diel+Temp", "~Diel+dB", "~Diel+Treatment", "~Temp+dB", "~Temp+Treatment", 
-                       "~dB+Treatment", "~dB:Treatment")
-        }else if (nCov == 3){
-            names <- c("~Trial+Pond+Diel", "~Trial+Pond+Temp", "~Trial+Pond+dB", 
-                       "~Trial+Pond+Treatment", "~Trial+Diel+Temp", "~Trial+Diel+dB", 
-                       "~Trial+Diel+Treatment", "~Trial+Temp+dB", "~Trial+Temp+Treatment", 
-                       "~Trial+dB+Treatment", "Trial+dB:Treatment", "~Pond+Diel+Temp", "~Pond+Diel+dB", 
-                       "~Pond+Diel+Treatment", "~Pond+Temp+dB", "~Pond+Temp+Treatment", 
-                       "~Pond+dB+Treatment", "~Pond+dB:Treatment", "~Diel+Temp+dB", "~Diel+Temp+Treatment", 
-                       "~Diel+dB+Treatment", "~Diel+dB:Treatment", "~Temp+dB+Treatment", "~Temp+dB:Treatment",
-                       "~dB*Treatment")
-        }else if (nCov == 4){
-            names <- c("~Trial+Pond+Diel+Temp", "~Trial+Pond+Diel+dB", "~Trial+Pond+Diel+Treatment",
-                       "~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", "~Trial+Pond+dB+Treatment",
-                       "~Trial+Pond+dB:Treatment", "~Trial+Diel+Temp+dB", "~Trial+Diel+Temp+Treatment", 
-                       "~Trial+Diel+dB+Treatment", "~Trial+Diel+dB:Treatment", "~Trial+Temp+dB+Treatment", 
-                       "~Trial+Temp+dB:Treatment","~Pond+Diel+Temp+dB", "~Pond+Diel+Temp+Treatment",
-                       "~Pond+Diel+dB+Treatment", "~Pond+Diel+dB:Treatment","~Pond+Temp+dB+Treatment", 
-                       "~Pond+Temp+dB:Treatment", "~Diel+Temp+dB+Treatment", "~Diel+Temp+dB:Treatment",
-                       "~Trial+dB*Treatment", "~Pond+dB*Treatment", "Diel+dB*Treatment", "~Temp+dB*Treatment")
-        }else if (nCov == 5){
-            names <- c("~Trial+Pond+Diel+Temp+dB", "~Trial+Pond+Diel+Temp+Treatment",
-                       "~Trial+Pond+Diel+dB+Treatment", "~Trial+Pond+Diel+dB:Treatment", 
-                       "~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
-                       "~Trial+Diel+Temp+dB+Treatment", "Trial+Diel+Temp+dB:Treatment",
-                       "~Pond+Diel+Temp+dB+Treatment", "~Pond+Diel+Temp+dB:Treatment",
-                       "~Trial+Pond+dB*Treatment", "~Trial+Diel+dB*Treatment", "~Trial+Temp+dB*Temperature",
-                       "~Pond+Diel+dB*Treatment", "~Pond+Temp+dB*Treatment", "~Diel+Temp+dB*Treatment")
-        }else if (nCov == 6){
-            names <- c("~Trial+Pond+Diel+Temp+dB+Treatment", "~Trial+Pond+Diel+Temp+dB:Treatment")
-        }else if (nCov == 7){
-            names <- c("~Trial+Pond+Diel+Temp+dB*Treatment")
-        }
-        
-        form_list <- list()
-        
-        for (i in 1:length(names)){
-            form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
-        }
-    }
+    form_list <- list()
     
-    if (!(include_diel)){
-        if (nCov == 0){
-            names <- c("~1")
-        }else if (nCov == 1){
-            names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
-        }else if (nCov == 2){
-            names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
-                       "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB+Treatment",
-                       "~dB:Treatment")
-        }else if (nCov == 3){
-            names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
-                       "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
-                       "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
-                       "~Temp+dB+Treatment", "~Temp+dB:Treatment", "~dB*Treatment")
-        }else if (nCov == 4){
-            names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
-                       "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temp+dB+Treatment",
-                       "~Trial+Temp+dB:Treatment", "~Pond+Temp+dB+Treatment", "~Pond+Temp+dB:Treatment",
-                       "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temp+dB*Treatment")
-        }else if (nCov == 5){
-            names <- c("~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
-                       "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", "~Pond+Temp+dB*Treatment")
-        }else if (nCov == 6){
-            names <- c("~Trial+Pond+Temp+dB*Treatment")
-        }
-        
-        form_list <- list()
-        
-        for (i in 1:length(names)){
-            form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
-        }
+    for (i in 1:length(names)){
+        form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
     }
 
     return(form_list)
@@ -727,90 +536,6 @@ treatment.key <- function(trial, pond){
     return(treatment)
 }
 
-fit.model <- function(df, stateNames = c("exploratory", "encamped"), dist = list(step = "gamma", angle = "vm"),
-                      initPar = list(step = c(2, 1, 1, 1), angle = c(0, 0, 0, 0)),
-                      modelFormula = ~ Trial + Pond + Diel + Temp + dB * Treatment){
-    
-    # this ensures that covariate columns have the correct numeric/factor types
-    
-    df <- within(df, {
-        Trial <- as.factor(Trial)
-        Pond <- as.factor(Pond)
-        Treatment <- as.factor(Treatment)
-        Sound <- as.factor(Sound)
-        Diel <- as.factor(Diel)
-        Temp <- as.numeric(Temp)
-        dB <- as.numeric(dB)
-    })
-    
-    # this logic takes adds zeromass parameters, if 0 exists as a step-length in the data
-    has_zero_step <- (0 %in% df$step)
-    if (has_zero_step){
-        zero_proportion <- length(which(df$step == 0)) / nrow(df)
-        for (state in 1:length(stateNames)){
-            initPar$step <- append(initPar$step, zero_proportion)
-        }
-    }
-
-    # this section fits an initial movement model to give better starting values when fitting the full HMM.
-    
-    m1 <- fitHMM(data = df, 
-                 nbStates = length(stateNames),
-                 dist = dist,
-                 Par0 = initPar,
-                 estAngleMean = list(angle=TRUE),
-                 stateNames = stateNames)
-    
-    print("Finished fitting movement model (step 1/3).")
-    
-    # this fits a model to estimate good starting transition probabilities
-    initPar1 <- getPar0(model = m1, formula = modelFormula)
-    
-    m2 <- fitHMM(data = m1$data,
-                 dist = dist,
-                 nbStates = length(stateNames),
-                 estAngleMean = list(angle = TRUE),
-                 stateNames = stateNames,
-                 Par0 = initPar1$Par,
-                 beta0 = initPar1$beta,
-                 formula = modelFormula)
-    
-    DM <- list(step = list(mean = modelFormula, sd = ~ 1),
-               angle = list(mean = modelFormula, concentration = ~ 1))
-    
-    if (has_zero_step){DM$step$zeromass <- ~1}
-    
-    print("Finished fitting model for estimating initial transition probabilities (step 2/3).")
-    
-    # this fits the full model
-    
-    initPar2 <- getPar0(model = m2, formula = modelFormula, DM = DM)
-    
-    FullMod <- fitHMM(data = m2$data,
-                      nbStates = length(stateNames),
-                      dist = dist,
-                      Par0 = initPar2$Par,
-                      beta0 = initPar2$beta,
-                      DM = DM,
-                      stateNames = stateNames,
-                      estAngleMean = list(angle = TRUE),
-                      formula = modelFormula)
-    
-    print("Finished fitting full model (step 3/3).")
-
-    return(FullMod)
-}
-
-fit.model.list <- function(list_element){
-    # this runs fit.model, but with a single element so that it can be entered as an argument in 
-    # parallel::mclapply().
-    
-    hmm <- fit.model(list_element$data, stateNames=c("exploratory", "encamped"), dist=list(step="gamma", angle="vm"),
-                            initPar=list(step=c(2, 1, 2, 1), angle=c(0.004, 0.004, 0.002, 0.002)),
-                            modelFormula=list_element$formula)
-    
-    return(hmm)
-}
 
 # multiprocessing
 # rep <- readRDS("D:/Carp-Model/Fitted HMMs/30min BA/Repetition 16/0 covariates.RDS")[[1]]$data

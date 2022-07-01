@@ -190,7 +190,7 @@ aic.plot <- function(df, rep, include_ranks=1:5, colors=c("red", "black"), disp_
 }
 
 
-db.histogram <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE, 
+db.histograms <- function(models, ba=NA, bins=NA, binwidth=1, include_means=TRUE, 
                          show_plot=TRUE, save_path=NA, state_names=c("exploratory", "encamped"), 
                          state_colors=c("#E69F00", "#56B4E9")){
     # plots overlapping histograms of the dB variable, colored by the different states
@@ -287,7 +287,8 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
         geom_col(aes(fill=States)) +
         scale_fill_manual(values=state_colors) +
         scale_x_continuous(breaks=seq(from=1, to=24, by=2)) +
-        labs(title="Difference between Exploratory and Encamped Mean dB", x="Repetition") +
+        labs(title=paste0("Difference between Exploratory and Encamped Mean dB (", ba, "min)"),
+             x="Repetition") +
         theme(plot.title=element_text(hjust=0.5),
               axis.title.y=element_blank(),
               legend.title=element_blank(),
@@ -301,4 +302,5 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
         ggsave(paste0(save_path, "Difference Between Mean dB by State.png"))
     }
 }
-    
+
+step.by.db <- function
