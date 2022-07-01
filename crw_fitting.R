@@ -29,7 +29,7 @@ crw.prediction <- function(.data,
     
     # crawlWrap does best with fewer tracks to fit; this generates smaller batches of tracks
     batch_counter <- 0
-    predictions <- data.frame(matrix(nrow=0, ncol=ncol(tel)))
+    predictions <- data.frame(matrix(nrow=0, ncol=ncol(tel) + 2))
     colnames(predictions) <- colnames(tel)
     
     while (batch_counter < length(ids)){
@@ -47,11 +47,11 @@ crw.prediction <- function(.data,
                                ncores = min(id_batch_size, ceiling(0.75 * detectCores()))
                                )
         
-        batch_predictions <- batch_crw$crwPredict
-        
+        batch_predictions <- prepData(batch_crw)
+
         # extract the covariates from telemetry to merge with crw predictions
-        covData <- telemetry[, c(crw_colnames[1:2], telemetryCovs)]
-        
+        covData <- telemetry[telemetry$ID %in% batch_ids, c(crw_colnames[1:2], telemetryCovs)]
+
         # merge covariates with predictions
         batch_predictions <- merge(batch_predictions, covData, by=crw_colnames[1:2])
         
@@ -59,10 +59,7 @@ crw.prediction <- function(.data,
         batch_counter <- batch_counter + id_batch_size
     }
     
-    #prepare data for input into movement model and define covariates
-    ModDat <- prepData(data=predictions, covNames=covariates)
-    
-    return(ModDat)
+    return(predictions)
 }
 
 add.treatment <- function(.data, 
@@ -138,24 +135,4 @@ diel.column <- function(.data, time_name="Time", dn_vals=c(0, 1),
     }
     
     return(.data)
-}
-
-fit.krig <- function(sound_data, pred_data, 
-                     crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
-    # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
-    # x, y, and dB.
-    
-    sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
-    sp_pred_data <- SpatialPoints(as.data.frame(pred_data), proj4string = CRS(crs_string))
-    
-    fit_KRIG <- automap::autoKrige(
-        formula = dB ~ 1,
-        input_data = as(sf_sound, "Spatial"),
-        new_data = sp_pred_data
-    ) %>%
-        .$krige_output %>%
-        as.data.frame() %>%
-        dplyr::select(x, y, dB = var1.pred)
-    
-    return(fit_KRIG)
 }
