@@ -65,12 +65,28 @@ crw.prediction <- function(.data,
     return(ModDat)
 }
 
+add.treatment <- function(.data, 
+                          colname="Treatment"){
+    # this function adds a column for treatment type
+    
+    trials <- unique(.data$Trial)
+    ponds <- unique(.data$Pond)
+    .data[[colname]] <- "placeholder"
+    
+    for (trial in trials){
+        for (pond in ponds){
+            .data[.data$Trial == trial & .data$Pond == pond, colname] <- treatment.key(trial, pond)
+        }
+    }
+    
+    .data[[colname]] <- as.factor(.data[[colname]])
+    
+    return(.data)
+}
 
 add.db <- function(.data, 
                    db_data_path,
                    colname="dB",
-                   trials=1:5, 
-                   ponds=c(26, 27, 30, 31),
                    crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
@@ -78,8 +94,12 @@ add.db <- function(.data,
     # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
     # PondXXTreatment, i.e., Pond27ChirpSquare.
     
+    # create column and determine trials/ponds in the provided data
     .data$dB <- 0
+    trials <- unique(.data$Trial)
+    ponds <- unique(.data$Pond)
     
+    # loop through trials/ponds and update dB column with kriging predictions
     for (trial in trials){
         for (pond in ponds){
             tmnt <- treatment.key(trial, pond)
@@ -94,7 +114,7 @@ add.db <- function(.data,
                                                                                sub_data[, c("x", "y")])$dB
         }
     }
-
+    
     return(.data)
 }
 
