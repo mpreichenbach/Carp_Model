@@ -1,6 +1,7 @@
 library(momentuHMM)
 library(parallel)
 library(suncalc)
+library(stats)
 library(tidyverse)
 source('model_functions.R')
 
@@ -65,13 +66,14 @@ crw.prediction <- function(.data,
 
 
 diel.column <- function(.data, 
+                        colname="Diel",
                         time_name="Time", 
                         day_night_values=c("Day", "Night"), 
                         latlong=c(38.9122061924, -92.2795993947), 
                         timezone="America/Chicago"){
     # adds a column of day/night values given in dn_vals vector
     
-    .data$Diel <- day_night_values[2]
+    .data[[colname]] <- day_night_values[2]
     all_dates <- unique(as.Date(.data[,time_name]))
     
     for (the_date in all_dates){
@@ -92,9 +94,9 @@ diel.column <- function(.data,
 
 
 intensity.column <- function(.data, 
-                          db_data_path,
-                          colname="dB",
-                          crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
+                             colname="dB",
+                             int_data_path,
+                             crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
     # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
@@ -102,7 +104,7 @@ intensity.column <- function(.data,
     # PondXXTreatment, i.e., Pond27ChirpSquare.
     
     # create column and determine trials/ponds in the provided data
-    .data$dB <- 0
+    .data[[colname]] <- 0
     trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
     
@@ -111,14 +113,17 @@ intensity.column <- function(.data,
         for (pond in ponds){
             tmnt <- treatment.key(trial, pond)
             if (tmnt == "Control"){next}
-            db_data <- read.csv(file.path(db_data_path, paste0("Pond", pond, tmnt, ".csv")))
+            db_data <- read.csv(file.path(int_data_path, paste0("Pond", pond, tmnt, ".csv")))
             sub_data <- .data[.data$Trial == trial & .data$Pond == pond,]
             if (nrow(sub_data) == 0){
                 print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
                 next
             }
-            .data[.data$Trial == trial & .data$Pond == pond, "dB"] <- fit.krig(db_data, 
-                                                                               sub_data[, c("x", "y")])$dB
+            
+            # yields the rows to update
+            subset_condition <- .data$Trial == trial & .data$Pond == pond
+            
+            .data[[colname]][subset_condition] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
         }
     }
     
@@ -126,13 +131,72 @@ intensity.column <- function(.data,
 }
 
 
+temperature.column <- function(.data,
+                               colname="Temperature",
+                               temperature_data_path,
+                               input_colnames=c("DateTime", "Temp_C"),
+                               trials=1:5,
+                               ponds=c(26, 27, 30, 31)
+                               ){
+    # adds a column with temperature values. Since the data I'm using has frequent measurements (15
+    # minutes) and low variation, this performs linear interpolation. However, this may not be a 
+    # good model for less frequent measurements (where a sinusoidal model may be better).
+    
+    temperature_data <- read.csv(temperature_data_path)
+    temperature_data <- temperature_data[order(input_colnames[1])]
+    
+    # first check whether there is sufficient temperature data
+    if (min(.data$Time) < min(temperature_data[[input_colnames[1]]]) | 
+        max(.data$Time) > max(temperature_Data[[input_colnames[2]]])){
+        stop("Insufficient temperature data; check min/max times of the random walk.")
+    }
+    
+    # create column
+    .data[[colname]] <- NA
+    
+    # predict temperature values
+    for (trial in trials){
+        for (pond in ponds){
+            # subset the positions
+            df_pos <- .data[.data$Trial == trial & .data$Pond == pond,]
+            df_dates <- unique(as.Date(df$Time))
+            
+            # subset the temperature data
+            df_temp <- temperature_data[temperature_data$Trial == trial & 
+                                            temperature_data$Pond == pond,]
+            
+            # fit a linear model to consecutive measurements, and predict temperatures
+            for (i in 1:(nrow(df_temp) - 1)){
+                y <- df_temp[i:(i + 1), input_colnames[[2]]]
+                x <- df_temp[i:(i + 1), input_colnames[[1]]]
+                
+                fit.lm <- lm(y~x)
+                
+                # yields the rows to update
+                subset_condition <- x[1] < .data$Time & 
+                    .data$Time < x[1] & 
+                    .data$Trial == trial & 
+                    .data$Pond == pond
+                
+                .data[[colname]][subset_condition] <- predict(fit.lm, 
+                                                              newdata=.data[subset_condition, "Time"])
+            }
+        }
+    }
+    
+    if (any(is.na(.data[[colname]]))){stop("There are still NA's in the temperature column.")}
+    
+    return(.data)
+}
+
 treatment.column <- function(.data, 
                           colname="Treatment"){
     # this function adds a column for treatment type
     
+    .data[[colname]] <- "placeholder"
+    
     trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
-    .data[[colname]] <- "placeholder"
     
     for (trial in trials){
         for (pond in ponds){
