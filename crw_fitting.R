@@ -135,6 +135,7 @@ temperature.column <- function(.data,
                                colname="Temperature",
                                temperature_data_path,
                                input_colnames=c("DateTime", "Temp_C"),
+                               timezone="America/Chicago",
                                trials=1:5,
                                ponds=c(26, 27, 30, 31)
                                ){
@@ -143,11 +144,14 @@ temperature.column <- function(.data,
     # good model for less frequent measurements (where a sinusoidal model may be better).
     
     temperature_data <- read.csv(temperature_data_path)
-    temperature_data <- temperature_data[order(input_colnames[1])]
+    temperature_data[[input_colnames[1]]] <- as.POSIXct(temperature_data[[input_colnames[1]]],
+                                                        tz=timezone)
+    temperature_data <- temperature_data[order(temperature_data[[input_colnames[1]]]),]
+    
     
     # first check whether there is sufficient temperature data
     if (min(.data$Time) < min(temperature_data[[input_colnames[1]]]) | 
-        max(.data$Time) > max(temperature_Data[[input_colnames[2]]])){
+        max(.data$Time) > max(temperature_data[[input_colnames[1]]])){
         stop("Insufficient temperature data; check min/max times of the random walk.")
     }
     
@@ -159,27 +163,30 @@ temperature.column <- function(.data,
         for (pond in ponds){
             # subset the positions
             df_pos <- .data[.data$Trial == trial & .data$Pond == pond,]
-            df_dates <- unique(as.Date(df$Time))
+            df_dates <- unique(as.Date(df_pos$Time))
             
             # subset the temperature data
             df_temp <- temperature_data[temperature_data$Trial == trial & 
                                             temperature_data$Pond == pond,]
             
-            # fit a linear model to consecutive measurements, and predict temperatures
+            # fit a line to consecutive measurements, and predict temperatures
             for (i in 1:(nrow(df_temp) - 1)){
                 y <- df_temp[i:(i + 1), input_colnames[[2]]]
                 x <- df_temp[i:(i + 1), input_colnames[[1]]]
                 
+                # skip past times intervals which don't intersect with the position data
+                if (x[2] < min(df_pos$Time) | max(df_pos$Time) < x[1]){next}
+                
                 fit.lm <- lm(y~x)
                 
                 # yields the rows to update
-                subset_condition <- x[1] < .data$Time & 
-                    .data$Time < x[1] & 
+                subset_condition <- x[1] <= .data$Time & 
+                    .data$Time < x[2] & 
                     .data$Trial == trial & 
                     .data$Pond == pond
                 
                 .data[[colname]][subset_condition] <- predict(fit.lm, 
-                                                              newdata=.data[subset_condition, "Time"])
+                                                              newdata=data.frame(x=.data[subset_condition, "Time"]))
             }
         }
     }
