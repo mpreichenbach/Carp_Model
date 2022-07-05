@@ -1,13 +1,14 @@
 library(momentuHMM)
 library(parallel)
+library(suncalc)
 library(tidyverse)
-source('model_function.R')
+source('model_functions.R')
 
 
 crw.prediction <- function(.data, 
                            tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
                            crw_colnames=c('ID', 'Time', 'x', 'y'),
-                           telemetryCovs=c('Trial', 'Pond'),
+                           telCovs=c('Trial', 'Pond'),
                            timestep="6 sec",
                            id_batch_size=10,
                            inits=c(2, 0.001),  
@@ -19,7 +20,7 @@ crw.prediction <- function(.data,
     
     # remove rows with missing locations, subset and rename columns
     tel <- .data %>%
-        select(tel_colnames) %>%
+        select(all_of(tel_colnames)) %>%
         drop_na()
         
     colnames(tel) <- crw_colnames
@@ -50,7 +51,7 @@ crw.prediction <- function(.data,
         batch_predictions <- prepData(batch_crw)
 
         # extract the covariates from telemetry to merge with crw predictions
-        covData <- telemetry[telemetry$ID %in% batch_ids, c(crw_colnames[1:2], telemetryCovs)]
+        covData <- .data[.data$ID %in% batch_ids, c(crw_colnames[1:2], telCovs)]
 
         # merge covariates with predictions
         batch_predictions <- merge(batch_predictions, covData, by=crw_colnames[1:2])
@@ -62,29 +63,38 @@ crw.prediction <- function(.data,
     return(predictions)
 }
 
-add.treatment <- function(.data, 
-                          colname="Treatment"){
-    # this function adds a column for treatment type
+
+diel.column <- function(.data, 
+                        time_name="Time", 
+                        day_night_values=c("Day", "Night"), 
+                        latlong=c(38.9122061924, -92.2795993947), 
+                        timezone="America/Chicago"){
+    # adds a column of day/night values given in dn_vals vector
     
-    trials <- unique(.data$Trial)
-    ponds <- unique(.data$Pond)
-    .data[[colname]] <- "placeholder"
+    .data$Diel <- day_night_values[2]
+    all_dates <- unique(as.Date(.data[,time_name]))
     
-    for (trial in trials){
-        for (pond in ponds){
-            .data[.data$Trial == trial & .data$Pond == pond, colname] <- treatment.key(trial, pond)
-        }
+    for (the_date in all_dates){
+        the_date <- as.Date(the_date)
+        sun_times <- getSunlightTimes(date=the_date,
+                                      lat=latlong[1],
+                                      lon=latlong[2],
+                                      keep=c("sunrise", "sunset"),
+                                      tz=timezone)
+        sunRise <- sun_times[, "sunrise"]
+        sunSet <- sun_times[, "sunset"]
+        
+        .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- day_night_values[1]
     }
-    
-    .data[[colname]] <- as.factor(.data[[colname]])
     
     return(.data)
 }
 
-add.db <- function(.data, 
-                   db_data_path,
-                   colname="dB",
-                   crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
+
+intensity.column <- function(.data, 
+                          db_data_path,
+                          colname="dB",
+                          crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
     # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
@@ -116,23 +126,22 @@ add.db <- function(.data,
 }
 
 
-diel.column <- function(.data, time_name="Time", dn_vals=c(0, 1), 
-                        latlong=c(38.9122061924, -92.2795993947), timezone="America/Chicago"){
-    # this outputs a column of diel values (should be rewritten to output df with the Diel column).
+treatment.column <- function(.data, 
+                          colname="Treatment"){
+    # this function adds a column for treatment type
     
-    .data$Diel <- dn_vals[2]
-    df_dates <- unique(as.Date(.data[,time_name]))
+    trials <- unique(.data$Trial)
+    ponds <- unique(.data$Pond)
+    .data[[colname]] <- "placeholder"
     
-    for (the_date in df_dates){
-        the_date <- as.Date(the_date)
-        sunRS <- sunrise.set(latlong[1], latlong[2],
-                             paste0(year(the_date), '/', month(the_date), '/', day(the_date)),
-                             timezone=timezone)
-        sunRise <- as.POSIXct(sunRS[,1], origin="1970-01-01", tz = timezone)
-        sunSet <- as.POSIXct(sunRS[,2], origin="1970-01-01", tz = timezone)
-        
-        .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- dn_vals[1]
+    for (trial in trials){
+        for (pond in ponds){
+            .data[.data$Trial == trial & .data$Pond == pond, colname] <- treatment.key(trial, pond)
+        }
     }
+    
+    .data[[colname]] <- as.factor(.data[[colname]])
     
     return(.data)
 }
+
