@@ -79,22 +79,6 @@ fix.states <- function(models, exp_enc = c(1, 2)){
 }
 
 
-convert.coords <- function(df, 
-                           input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
-                           output_crs = CRS("+proj=longlat +datum=WGS84")){
-    # takes a dataframe of x,y (Easting, Northing) points and converts them to output projection.
-    
-    x <- colnames(df)[1]
-    y <- colnames(df)[2]
-    coordinates(df) <- ~x + y
-    proj4string(df) <- input_crs
-    
-    df_out <- as.data.frame(spTransform(df, output_crs)@coords)
-    
-    return(df_out)
-}
-
-
 correct.tags <- function(trial, pond){
     # gives a numeric vector with the correct tag codes for each trial
 
@@ -457,18 +441,6 @@ sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str
     return(df)
 }
 
-
-temperature.data <- function(path=file.path(getwd(), "Supplementary Files")){
-    # loads the pond temperature data, converts date/times to POSIXct, and returns a data frame.
-    
-    TData <- read.csv(file.path(path, "2018CERC_WaterTemperature_AllTrialsPonds.csv"), 
-                      stringsAsFactors=F)
-    
-    TData$DT <- as.POSIXct(TData$DateTime,format="%Y-%m-%d %H:%M:%S")
-    TData$DateTime <- NULL
-    
-    return(TData)
-}
 
 
 time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
