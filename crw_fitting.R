@@ -163,8 +163,7 @@ temperature.column <- function(.data,
         for (pond in ponds){
             # subset the positions
             df_pos <- .data[.data$Trial == trial & .data$Pond == pond,]
-            df_dates <- unique(as.Date(df_pos$Time))
-            
+
             # subset the temperature data
             df_temp <- temperature_data[temperature_data$Trial == trial & 
                                             temperature_data$Pond == pond,]
