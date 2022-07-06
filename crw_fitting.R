@@ -94,8 +94,8 @@ add_diel <- function(.data,
 
 
 add_intensity <- function(.data, 
+                          intensity_data_path,
                           colname="dB",
-                          int_data_path,
                           crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m") {
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
@@ -113,7 +113,7 @@ add_intensity <- function(.data,
         for (pond in ponds){
             tmnt <- treatment.key(trial, pond)
             if (tmnt == "Control"){next}
-            db_data <- read.csv(file.path(int_data_path, paste0("Pond", pond, tmnt, ".csv")))
+            db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
             sub_data <- .data[.data$Trial == trial & .data$Pond == pond,]
             if (nrow(sub_data) == 0){
                 print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
@@ -132,8 +132,8 @@ add_intensity <- function(.data,
 
 
 add_temperature <- function(.data,
-                            colname="Temperature",
                             temperature_data_path,
+                            colname="Temperature",
                             input_colnames=c("DateTime", "Temp_C"),
                             timezone="America/Chicago",
                             trials=1:5,
