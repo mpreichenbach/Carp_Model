@@ -1,3 +1,4 @@
+library(hms)
 library(momentuHMM)
 library(parallel)
 library(suncalc)
@@ -114,7 +115,7 @@ add_intensity <- function(.data,
             tmnt <- treatment.key(trial, pond)
             if (tmnt == "Control"){next}
             db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
-            sub_data <- .data[.data$Trial == trial & .data$Pond == pond,]
+            sub_data <- .data[.data$Sound == "on" & .data$Trial == trial & .data$Pond == pond,]
             if (nrow(sub_data) == 0){
                 print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
                 next
@@ -190,6 +191,24 @@ add_temperature <- function(.data,
     }
     
     if (any(is.na(.data[[colname]]))){stop("There are still NA's in the temperature column.")}
+    
+    return(.data)
+}
+
+add_sound <- function(.data,
+                      sound_data,
+                      rep_number,
+                      colname = "Sound",
+                      values = c("on", "off")) {
+    
+    # adds a column to indicate before/after the sound plays
+    
+    # extract the relevant time
+    on_time <- unique(as_hms(sound_data[sound_data$Repetition == rep_number, "Time"]))
+    
+    # assign the on/off values
+    .data[, colname] <- values[2]
+    .data[as_hms(.data$Time) >= on_time, colname] <- values[1]
     
     return(.data)
 }
