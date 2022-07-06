@@ -115,19 +115,15 @@ add_intensity <- function(.data,
             tmnt <- treatment.key(trial, pond)
             if (tmnt == "Control"){next}
             db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
-            sub_data <- .data[.data$Sound == "on" & .data$Trial == trial & .data$Pond == pond,]
+            subset_condition <- .data$Sound == "on" & .data$Trial == trial & .data$Pond == pond
+            sub_data <- .data[subset_condition, ]
             if (nrow(sub_data) == 0){
                 print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
                 next
             }
-            
-            # yields the rows to update
-            subset_condition <- .data$Trial == trial & .data$Pond == pond
-            
-            .data[[colname]][subset_condition] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
+            .data[subset_condition, colname] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
         }
     }
-    
     return(.data)
 }
 
