@@ -8,7 +8,7 @@ fit.model <- function(.data,
                       stateNames=c("exploratory", "encamped"),
                       dist=list(step="gamma", angle="vm"),
                       initPar=list(step = c(2, 1, 1, 1), angle = c(0, 0, 0, 0))
-                      ){
+                      ) {
     
     # this ensures that covariate columns have the correct numeric/factor types
     for (factor_name in factorCovs){
@@ -28,7 +28,7 @@ fit.model <- function(.data,
         }
     }
     
-    # sometimes the initial parameter orders don't match the fitted parameters; this fixes that
+    # sometimes the initPar values don't match the fitted parameters; the while loop checks for that
     incorrect_means <- TRUE
     
     while (incorrect_means){
@@ -43,8 +43,7 @@ fit.model <- function(.data,
         print("Finished fitting movement model (step 1/3).")
         
         # this fits a model to estimate good starting transition probabilities
-        initPar1 <- getPar0(model=model_1, 
-                            formula=modelFormula)
+        initPar1 <- getPar0(model=model_1, formula=modelFormula)
         
         model_2 <- fitHMM(data=model_1$data,
                           dist=dist,
@@ -90,7 +89,7 @@ fit.model <- function(.data,
     return(FullModel)
 }
 
-fit.model.list <- function(list_element){
+fit.model.list <- function(list_element) {
     # this runs fit.model, but with a single element so that it can be entered as an argument in 
     # parallel::mclapply().
     

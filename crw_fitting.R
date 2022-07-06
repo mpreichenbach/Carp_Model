@@ -6,16 +6,16 @@ library(tidyverse)
 source('model_functions.R')
 
 
-crw.prediction <- function(.data, 
-                           tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
-                           crw_colnames=c('ID', 'Time', 'x', 'y'),
-                           telCovs=c('Trial', 'Pond'),
-                           timestep="6 sec",
-                           id_batch_size=10,
-                           inits=c(2, 0.001),  
-                           retry_fits=100, 
-                           attempts=100, 
-                           doParallel = TRUE){
+predict_crw <- function(.data, 
+                        tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
+                        crw_colnames=c('ID', 'Time', 'x', 'y'),
+                        telCovs=c('Trial', 'Pond'),
+                        timestep="6 sec",
+                        id_batch_size=10,
+                        inits=c(2, 0.001),  
+                        retry_fits=100, 
+                        attempts=100, 
+                        doParallel = TRUE) {
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
@@ -65,12 +65,12 @@ crw.prediction <- function(.data,
 }
 
 
-diel.column <- function(.data, 
-                        colname="Diel",
-                        time_name="Time", 
-                        day_night_values=c("Day", "Night"), 
-                        latlong=c(38.9122061924, -92.2795993947), 
-                        timezone="America/Chicago"){
+add_diel <- function(.data, 
+                     colname="Diel",
+                     time_name="Time", 
+                     day_night_values=c("Day", "Night"), 
+                     latlong=c(38.9122061924, -92.2795993947), 
+                     timezone="America/Chicago"){
     # adds a column of day/night values given in dn_vals vector
     
     .data[[colname]] <- day_night_values[2]
@@ -93,10 +93,10 @@ diel.column <- function(.data,
 }
 
 
-intensity.column <- function(.data, 
-                             colname="dB",
-                             int_data_path,
-                             crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
+add_intensity <- function(.data, 
+                          colname="dB",
+                          int_data_path,
+                          crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m") {
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
     # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
@@ -131,14 +131,13 @@ intensity.column <- function(.data,
 }
 
 
-temperature.column <- function(.data,
-                               colname="Temperature",
-                               temperature_data_path,
-                               input_colnames=c("DateTime", "Temp_C"),
-                               timezone="America/Chicago",
-                               trials=1:5,
-                               ponds=c(26, 27, 30, 31)
-                               ){
+add_temperature <- function(.data,
+                            colname="Temperature",
+                            temperature_data_path,
+                            input_colnames=c("DateTime", "Temp_C"),
+                            timezone="America/Chicago",
+                            trials=1:5,
+                            ponds=c(26, 27, 30, 31)) {
     # adds a column with temperature values. Since the data I'm using has frequent measurements (15
     # minutes) and low variation, this performs linear interpolation. However, this may not be a 
     # good model for less frequent measurements (where a sinusoidal model may be better).
@@ -150,7 +149,7 @@ temperature.column <- function(.data,
     
     
     # first check whether there is sufficient temperature data
-    if (min(.data$Time) < min(temperature_data[[input_colnames[1]]]) | 
+    if (min(.data$Time) < min(temperature_data[[input_colnames[1]]]) || 
         max(.data$Time) > max(temperature_data[[input_colnames[1]]])){
         stop("Insufficient temperature data; check min/max times of the random walk.")
     }
@@ -174,7 +173,7 @@ temperature.column <- function(.data,
                 x <- df_temp[i:(i + 1), input_colnames[[1]]]
                 
                 # skip past times intervals which don't intersect with the position data
-                if (x[2] < min(df_pos$Time) | max(df_pos$Time) < x[1]){next}
+                if (x[2] < min(df_pos$Time) || max(df_pos$Time) < x[1]){next}
                 
                 fit.lm <- lm(y~x)
                 
@@ -195,8 +194,8 @@ temperature.column <- function(.data,
     return(.data)
 }
 
-treatment.column <- function(.data, 
-                          colname="Treatment"){
+add_treatment <- function(.data, 
+                          colname="Treatment") {
     # this function adds a column for treatment type
     
     .data[[colname]] <- "placeholder"
