@@ -1,14 +1,17 @@
 library(momentuHMM)
 
 
-fit.model <- function(.data, 
+fit_model <- function(.data, 
                       modelFormula,
                       factorCovs=c("Trial", "Pond", "Treatment", "Sound", "Diel"),
                       numericCovs=c("Temperature", "dB"),
                       stateNames=c("exploratory", "encamped"),
                       dist=list(step="gamma", angle="vm"),
-                      initPar=list(step = c(2, 1, 1, 1), angle = c(0, 0, 0, 0))
-                      ) {
+                      initPar=list(step = c(2, 1, 1, 1), angle = c(0.01, 0.01, 0.01, 0.01))) {
+    
+    # the pipe functions in crw_fitting remove the momentuHMMData class; this puts it back in
+    .data <- .data[, ! names(.data) %in% c("step", "angle")]
+    .data <- prepData(.data)
     
     # this ensures that covariate columns have the correct numeric/factor types
     for (factor_name in factorCovs){
@@ -18,9 +21,12 @@ fit.model <- function(.data,
     for (numeric_name in numericCovs){
         .data[[numeric_name]] <- as.numeric(.data[[numeric_name]])
     }
+    
+    # ensure that modelFormula is actually of class "formula"
+    modelFormula <- as.formula(modelFormula)
 
     # this logic adds zero-mass parameters, which are necessary when 0 is a step-length
-    has_zero_step <- (0 %in% df$step)
+    has_zero_step <- (0 %in% .data$step)
     if (has_zero_step){
         zero_proportion <- length(which(.data$step == 0)) / nrow(.data)
         for (state in 1:length(stateNames)){
@@ -78,8 +84,8 @@ fit.model <- function(.data,
                             formula=modelFormula)
         
         # Makes sure that the fitted models have mean steps which align with expectations
-        state_1_mean <- FullModel$CIreal$step$est[[stateNames[1]]]
-        state_2_mean <- FullModel$CIreal$step$est[[stateNames[2]]]
+        state_1_mean <- FullModel$CIreal$step$est["mean", stateNames[1]]
+        state_2_mean <- FullModel$CIreal$step$est["mean", stateNames[2]]
         
         incorrect_means <- state_1_mean < state_2_mean
     }
