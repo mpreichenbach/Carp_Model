@@ -8,9 +8,9 @@ source('model_functions.R')
 
 
 predict_crw <- function(.data, 
-                        tel_colnames=c('ID', 'Time', 'Easting', 'Northing'),
-                        crw_colnames=c('ID', 'Time', 'x', 'y'),
-                        telCovs=c('Trial', 'Pond'),
+                        tel_colnames=c("ID", "Time", "Easting", "Northing"),
+                        crw_colnames=c("ID", "Time", "x", "y"),
+                        telCovs=c("Trial", "Pond", "Repetition"),
                         timestep="6 sec",
                         id_batch_size=10,
                         inits=c(2, 0.001),  
@@ -95,7 +95,7 @@ add_diel <- function(.data,
 
 
 add_intensity <- function(.data, 
-                          sound_samples_path = "~/Carp-Model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
+                          sound_samples_path,
                           treatments = list(c("ChirpSaw", "Saw"), 
                                           c("ChirpSquare", "Square"), 
                                           c("BoatMotor", "100Hp")),
@@ -167,6 +167,28 @@ add_intensity <- function(.data,
 }
 
 
+add_sound <- function(.data,
+                      values = c("on", "off")) {
+    
+    # adds a column to indicate before/after the sound plays
+    
+    rep_number <- unique(.data$Repetition)
+    if (length(rep_number) != 1) {stop("Number of repetitions in the data must equal 1.")}
+    
+    # load the sound sample data
+    df_sound <- sound_data()
+    
+    # extract the relevant time
+    on_time <- unique(as_hms(df_sound[df_sound$Repetition == rep_number, "Time"]))
+    
+    # assign the on/off values
+    .data$Sound <- values[2]
+    .data[as_hms(.data$Time) >= on_time, "Sound"] <- values[1]
+    
+    .data
+}
+
+
 add_temperature <- function(.data,
                             temperature_data_path,
                             input_colnames=c("DateTime", "Temp_C"),
@@ -230,22 +252,6 @@ add_temperature <- function(.data,
     .data
 }
 
-add_sound <- function(.data,
-                      rep_number,
-                      sound_data = sound_data(),
-                      values = c("on", "off")) {
-    
-    # adds a column to indicate before/after the sound plays
-    
-    # extract the relevant time
-    on_time <- unique(as_hms(sound_data[sound_data$Repetition == rep_number, "Time"]))
-    
-    # assign the on/off values
-    .data$Sound <- values[2]
-    .data[as_hms(.data$Time) >= on_time, "Sound"] <- values[1]
-    
-    .data
-}
 
 add_treatment <- function(.data) {
     # this function adds a column for treatment type
