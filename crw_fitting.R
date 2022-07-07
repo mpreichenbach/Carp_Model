@@ -17,6 +17,7 @@ predict_crw <- function(.data,
                         retry_fits=100, 
                         attempts=100, 
                         doParallel = TRUE) {
+    
     # this function loads sound and processed telemetry data, and fits correlated random-walks to
     # the tracks.
     
@@ -67,14 +68,13 @@ predict_crw <- function(.data,
 
 
 add_diel <- function(.data, 
-                     colname="Diel",
                      time_name="Time", 
                      day_night_values=c("Day", "Night"), 
                      latlong=c(38.9122061924, -92.2795993947), 
                      timezone="America/Chicago"){
     # adds a column of day/night values given in dn_vals vector
     
-    .data[[colname]] <- day_night_values[2]
+    .data$Diel <- day_night_values[2]
     all_dates <- unique(as.Date(.data[,time_name]))
     
     for (the_date in all_dates){
@@ -90,12 +90,11 @@ add_diel <- function(.data,
         .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- day_night_values[1]
     }
     
-    return(.data)
+    .data
 }
 
 
 add_intensity <- function(.data, 
-                          new_colname = "dB",
                           sound_samples_path = "~/Carp-Model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
                           treatments = list(c("ChirpSaw", "Saw"), 
                                           c("ChirpSquare", "Square"), 
@@ -114,7 +113,7 @@ add_intensity <- function(.data,
     # PondXXTreatment, i.e., Pond27ChirpSquare.
     
     # create column and load the sound samples
-    .data[[new_colname]] <- 0
+    .data$dB <- 0
     df_sound <- read.csv(sound_samples_path)
     df_sound[df_sound == "*"] <- NA
     df_sound <- drop_na(df_sound)
@@ -157,36 +156,19 @@ add_intensity <- function(.data,
                 next
             }
             
-            .data[tel_subset_bool, new_colname] <- fit_krig(sound_sub,
-                                                            pred_data = tel_sub[, c("x", "y")],
-                                                            crs_string = crs_string)$dB
+            .data[tel_subset_bool, dB] <- fit_krig(sound_sub,
+                                                   pred_data = tel_sub[, c("x", "y")],
+                                                   crs_string = crs_string)$dB
             
         }
     }
     
     .data
-    
-    # for (trial in trials){
-    #     for (pond in ponds){
-    #         tmnt <- treatment.key(trial, pond)
-    #         if (tmnt == "Control"){next}
-    #         db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
-    #         subset_condition <- .data$Sound == "on" & .data$Trial == trial & .data$Pond == pond
-    #         sub_data <- .data[subset_condition, ]
-    #         if (nrow(sub_data) == 0){
-    #             print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
-    #             next
-    #         }
-    #         .data[subset_condition, colname] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
-    #     }
-    # }
-    # return(.data)
 }
 
 
 add_temperature <- function(.data,
                             temperature_data_path,
-                            colname="Temperature",
                             input_colnames=c("DateTime", "Temp_C"),
                             timezone="America/Chicago",
                             trials=1:5,
@@ -208,7 +190,7 @@ add_temperature <- function(.data,
     }
     
     # create column
-    .data[[colname]] <- NA
+    .data$Temperature <- NA
     
     # predict temperature values
     for (trial in trials){
@@ -236,21 +218,21 @@ add_temperature <- function(.data,
                     .data$Trial == trial & 
                     .data$Pond == pond
                 
-                .data[[colname]][subset_condition] <- predict(fit.lm, 
-                                                              newdata=data.frame(x=.data[subset_condition, "Time"]))
+                predicted <- predict(fit.lm, newdata=data.frame(x=.data[subset_condition, "Time"]))
+                
+                .data[subset_condition, "Temperature"] <- predicted
             }
         }
     }
     
-    if (any(is.na(.data[[colname]]))){stop("There are still NA's in the temperature column.")}
+    if (any(is.na(.data$Temperature))){stop("There are still NA's in the temperature column.")}
     
-    return(.data)
+    .data
 }
 
 add_sound <- function(.data,
-                      sound_data,
                       rep_number,
-                      colname = "Sound",
+                      sound_data = sound_data(),
                       values = c("on", "off")) {
     
     # adds a column to indicate before/after the sound plays
@@ -259,29 +241,28 @@ add_sound <- function(.data,
     on_time <- unique(as_hms(sound_data[sound_data$Repetition == rep_number, "Time"]))
     
     # assign the on/off values
-    .data[, colname] <- values[2]
-    .data[as_hms(.data$Time) >= on_time, colname] <- values[1]
+    .data$Sound <- values[2]
+    .data[as_hms(.data$Time) >= on_time, "Sound"] <- values[1]
     
-    return(.data)
+    .data
 }
 
-add_treatment <- function(.data, 
-                          colname="Treatment") {
+add_treatment <- function(.data) {
     # this function adds a column for treatment type
     
-    .data[[colname]] <- "placeholder"
+    .data$Treatment <- "placeholder"
     
     trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
     
     for (trial in trials){
         for (pond in ponds){
-            .data[.data$Trial == trial & .data$Pond == pond, colname] <- treatment.key(trial, pond)
+            tmnt <- treatment_key(trial, pond)
+            .data[.data$Trial == trial & .data$Pond == pond, "Treatment"] <- tmnt
         }
     }
     
-    .data[[colname]] <- as.factor(.data[[colname]])
+    .data$Treatment <- as.factor(.data$Treatment)
     
-    return(.data)
+    .data
 }
-

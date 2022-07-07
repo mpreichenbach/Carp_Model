@@ -37,7 +37,7 @@ convert_coords <- function(df,
     
     converted <- as.data.frame(spTransform(df, CRSobj=CRS(output_crs)))
 
-    return(converted)
+    converted
 }
 
 fit_krig <- function(sound_data, pred_data, 
@@ -48,7 +48,7 @@ fit_krig <- function(sound_data, pred_data,
     sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
     sp_pred_data <- SpatialPoints(as.data.frame(pred_data), proj4string = CRS(crs_string))
     
-    fit_KRIG <- automap::autoKrige(
+    krig <- automap::autoKrige(
         formula = dB ~ 1,
         input_data = as(sf_sound, "Spatial"),
         new_data = sp_pred_data
@@ -57,36 +57,11 @@ fit_krig <- function(sound_data, pred_data,
         as.data.frame() %>%
         dplyr::select(x, y, dB = var1.pred)
     
-    return(fit_KRIG)
-}
-
-fix.states <- function(models, exp_enc = c(1, 2)){
-    # given the models vector, this ensures that the state with greater mean step length is 
-    # consistently named "exploratory". The fitting process seems to assign that label to the state
-    # with greater step length often, but not always.
-    
-    n_reps <- length(models)
-    
-    for (rep in 1:n_reps){
-        df <- models[[rep]]$data
-        step_1 <- mean(df[df$States == 1, c("step")], na.rm=TRUE)
-        step_2 <- mean(df[df$States == 2, c("step")], na.rm=TRUE)
-        
-        if (step_1 < step_2){
-            print(paste0("State labels switched in Repetition ", rep, "."))
-            df$States <- ifelse(df$States == 1, 2, 1)
-        }
-        
-        models[[rep]]$data <- df
-        
-    }
-    
-    return(models)
-    
+    krig
 }
 
 
-correct.tags <- function(trial, pond){
+correct_tags <- function(trial, pond){
     # gives a numeric vector with the correct tag codes for each trial
 
 
@@ -142,7 +117,7 @@ correct.tags <- function(trial, pond){
 }
 
 
-get.formulas <- function(nCov){
+get_formulas <- function(nCov){
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
     # "Trial", "Pond", "Diel", "Temp", "dB", "Treatment". Most subsets of the telemetry data
     # only have one value for diel, which will cause problems in model fitting. For these cases, use
@@ -188,12 +163,17 @@ get.formulas <- function(nCov){
         form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
     }
 
-    return(form_list)
+    form_list
 }
 
 
-plot.interp <- function(points, pond, sound, grad_min, grad_max, 
+plot_interp <- function(points, 
+                        pond, 
+                        sound, 
+                        grad_min, 
+                        grad_max, 
                         colours = c("blue", "red", "yellow")){
+    
     plt <- ggplot(points, aes(x = x, y = y, fill = dB)) +
         geom_raster() +
         ggtitle(label = paste0(sound, ", Pond ", pond)) +
@@ -213,11 +193,16 @@ plot.interp <- function(points, pond, sound, grad_min, grad_max,
             axis.line = element_blank(),
         )
     
-    return(plt)
+    plt    
 }
 
 
-plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, max_time, tel_col = "dodgerblue1", 
+plot_tracks <- function(tel_data = NULL, 
+                        crw_data = NULL, 
+                        id = NULL, 
+                        min_time, 
+                        max_time, 
+                        tel_col = "dodgerblue1", 
                         crw_col = "orange1", full_extent=FALSE){
     # plots the telemetry tracks and the fitted CRW for the time period between min_time and
     # max_time. Returns a list of plots, one for each ID. Assumes that time values are POSIXct, and 
@@ -366,12 +351,13 @@ plot.tracks <- function(tel_data = NULL, crw_data = NULL, id = NULL, min_time, m
     
     # make ID string the name of each respective plot
     names(plot_list) <- ids_str
-    
-    return(plot_list)
+
+    plot_list    
 }
 
 
-pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_corners_only=TRUE){
+pond_locations <- function(path=file.path(getwd(), "Supplementary Files"), 
+                           bnd_corners_only=TRUE){
     # loads GPS coordinates of speakers, kettles, hydrophones in each pond, along
     # with the boundaries of each pond. Returns a list of data frames, one for each
     # type of object.
@@ -417,12 +403,13 @@ pond.locations <- function(path=file.path(getwd(), "Supplementary Files"), bnd_c
     
     BND <- df
   
-    loc.list = list("speakers"=SPK, "kettles"=KET, "hydrophones"=HYD, "boundary"=BND)
-    return(loc.list)
+    loc_list = list("speakers"=SPK, "kettles"=KET, "hydrophones"=HYD, "boundary"=BND)
+    loc_list
 }
 
 
-sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str="30 min"){
+sound_data <- function(path=file.path(getwd(), "Supplementary Files"), 
+                       round_str="30 min"){
     # loads the data frame with sound on/off times, pond, and sound type; also processes date/time
     # values to POSIXct format. Rounds values to nearest interval given in round_str; round_str=None
     # keeps unrounded values. Returns a dataframe ordered by local times.
@@ -444,13 +431,13 @@ sound.data <- function(path=file.path(getwd(), "Supplementary Files"), round_str
 
     df$Time <- unique_times[order(unique_times)]
     df$Repetition <- (((as.numeric(row.names(df)) - 1) %% 24) + 1)
-    
-    return(df)
+
+    df    
 }
 
 
 
-time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
+time_to_str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
     # turns a POSIXct value into a string
     
     if (!(hasDate | hasTime)) stop("At least one of hasDate or hasTime must be TRUE.")
@@ -483,10 +470,10 @@ time.to.str <- function(timeVal, sep = "_", hasDate = TRUE, hasTime = TRUE){
         dt_str <- paste(date_str, time_str)
     }
     
-    return(dt_str)
+    dt_str
 }
 
-treatment.key <- function(trial, pond){
+treatment_key <- function(trial, pond){
     # this returns the sound treatment type ("Control", "ChirpSquare", "BoatMotor", "ChirpSaw"),
     # given the trial and pond numbers. Note that this function is only valid for the 2018 CERC
     # trials; it will need to change for any future experimental setup.
@@ -547,14 +534,14 @@ treatment.key <- function(trial, pond){
         }
     }
     
-    return(treatment)
+    treatment
 }
 
 
 # multiprocessing
 # rep <- readRDS("D:/Carp-Model/Fitted HMMs/30min BA/Repetition 16/0 covariates.RDS")[[1]]$data
 # for (i in c( 4, 5, 6)){
-#   frm <- get.formulas(i)
+#   frm <- get_formulas(i)
 # 
 #   frm_list <- list()
 #   for (j in 1:length(frm)){
@@ -599,7 +586,7 @@ treatment.key <- function(trial, pond){
 #                 next
 #             }
 #             rep[rep$Trial == trial & rep$Pond == pond, "Treatment"] <- tmnt
-#             rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "dB"] <- fit.krig(sound_data, rep_sub[, c("x", "y")])$dB
+#             rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "dB"] <- fit_krig(sound_data, rep_sub[, c("x", "y")])$dB
 #             rep[rep$Trial == trial & rep$Pond == pond & rep$HMS >= on_time, "Sound"] <- 1
 #         }
 #     }
