@@ -119,7 +119,7 @@ correct_tags <- function(trial, pond){
 
 get_formulas <- function(nCov){
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
-    # "Trial", "Pond", "Diel", "Temp", "dB", "Treatment". Most subsets of the telemetry data
+    # "Trial", "Pond", "Diel", "Temperature", "dB", "Treatment". Most subsets of the telemetry data
     # only have one value for diel, which will cause problems in model fitting. For these cases, use
     # the default value of the include_diel argument. If the time block of interest contains sunrise
     # or sunset, the data will contain 0, 1 values for diel, and include_diel should be set to TRUE.
@@ -135,26 +135,26 @@ get_formulas <- function(nCov){
     if (nCov == 0){
         names <- c("~1")
     }else if (nCov == 1){
-        names <- c("~Trial", "~Pond", "~Temp", "~dB", "~Treatment")
+        names <- c("~Trial", "~Pond", "~Temperature", "~dB", "~Treatment")
     }else if (nCov == 2){
-        names <- c("~Trial+Pond", "~Trial+Temp", "~Trial+dB", "~Trial+Treatment", "~Pond+Temp", 
-                   "~Pond+dB", "~Pond+Treatment", "~Temp+dB", "~Temp+Treatment", "~dB+Treatment",
+        names <- c("~Trial+Pond", "~Trial+Temperature", "~Trial+dB", "~Trial+Treatment", "~Pond+Temperature", 
+                   "~Pond+dB", "~Pond+Treatment", "~Temperature+dB", "~Temperature+Treatment", "~dB+Treatment",
                    "~dB:Treatment")
     }else if (nCov == 3){
-        names <- c("~Trial+Pond+Temp", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
-                   "~Trial+Temp+dB", "~Trial+Temp+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
-                   "~Pond+Temp+dB", "~Pond+Temp+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
-                   "~Temp+dB+Treatment", "~Temp+dB:Treatment", "~dB*Treatment")
+        names <- c("~Trial+Pond+Temperature", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
+                   "~Trial+Temperature+dB", "~Trial+Temperature+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
+                   "~Pond+Temperature+dB", "~Pond+Temperature+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
+                   "~Temperature+dB+Treatment", "~Temperature+dB:Treatment", "~dB*Treatment")
     }else if (nCov == 4){
-        names <- c("~Trial+Pond+Temp+dB", "~Trial+Pond+Temp+Treatment", 
-                   "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temp+dB+Treatment",
-                   "~Trial+Temp+dB:Treatment", "~Pond+Temp+dB+Treatment", "~Pond+Temp+dB:Treatment",
-                   "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temp+dB*Treatment")
+        names <- c("~Trial+Pond+Temperature+dB", "~Trial+Pond+Temperature+Treatment", 
+                   "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temperature+dB+Treatment",
+                   "~Trial+Temperature+dB:Treatment", "~Pond+Temperature+dB+Treatment", "~Pond+Temperature+dB:Treatment",
+                   "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temperature+dB*Treatment")
     }else if (nCov == 5){
-        names <- c("~Trial+Pond+Temp+dB+Treatment", "~Trial+Pond+Temp+dB:Treatment",
-                   "~Trial+Pond+dB*Treatment", "~Trial+Temp+dB*Treatment", "~Pond+Temp+dB*Treatment")
+        names <- c("~Trial+Pond+Temperature+dB+Treatment", "~Trial+Pond+Temperature+dB:Treatment",
+                   "~Trial+Pond+dB*Treatment", "~Trial+Temperature+dB*Treatment", "~Pond+Temperature+dB*Treatment")
     }else if (nCov == 6){
-        names <- c("~Trial+Pond+Temp+dB*Treatment")
+        names <- c("~Trial+Pond+Temperature+dB*Treatment")
     }
     
     form_list <- list()
@@ -852,7 +852,7 @@ treatment_key <- function(trial, pond){
 #         
 #         rep_subset <- trial_merge[(rep_time - ba_interval <= trial_merge$DT) &
 #                                       (trial_merge$DT <= rep_time + ba_interval),
-#                                   c("DT", "Easting", "Northing", "ID", "Sound", "Diel", "Temp",
+#                                   c("DT", "Easting", "Northing", "ID", "Sound", "Diel", "Temperature",
 #                                     "Trial", "Pond")]
 #         rep_subset$Repetition <- repetition
 #         saveRDS(rep_subset, paste0(pd_path, "Hour of sound-on times/Repetition ", j, 

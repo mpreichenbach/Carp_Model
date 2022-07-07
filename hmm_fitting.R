@@ -96,11 +96,11 @@ fit_model <- function(.data,
 }
 
 fit_model_list <- function(list_element) {
-    # this runs fit.model, but with a single element so that it can be entered as an argument in 
+    # this runs fit_model, but with a single element so that it can be entered as an argument in 
     # parallel::mclapply().
     
-    hmm <- fit.model(list_element$data, 
-                     modelFormula=list_elements$formula,
+    hmm <- fit_model(list_element$data, 
+                     modelFormula=list_element$formula,
                      stateNames=c("exploratory", "encamped"), 
                      dist=list(step="gamma", angle="vm"),
                      initPar=list(step=c(2, 1, 1, 1), angle=c(0.004, 0.004, 0.002, 0.002)))
@@ -126,25 +126,25 @@ hmm_parallel_fit <- function(data,
         
         # generates a list of formula/data pairs to input to fit_model_list
         frm_list <- list()
-        for (frm in frm_list) {
+        for (frm in formulas) {
             key <- deparse(frm)
             frm_list[[key]] <- list("formula" = frm, "data" = data)
         }
         
         # set up cluster for multiprocessing
-        cl <- makeCluster(cluster_size)
+        cl <- makeCluster(min(length(formulas), cluster_size))
         clusterExport(cl, c("fit_model_list", "fit_model"))
         clusterEvalQ(cl, library(momentuHMM))
         
         # fit all the HMMs (this can be a long process)
         tic = Sys.time()
-        hmm <- parLapplyLB(Cl, frm_list, fit_model_list)
+        hmm <- parLapplyLB(cl, frm_list, fit_model_list)
         toc = Sys.time()
         
-        print(paste0("Fitting models with ", i, " covariates is complete;"))
-        print(paste0(toc - tic, " elapsed."))
+        print(paste0("Fitting models with ", n_cov, " covariates is complete;"))
+        print(paste0(toc - tic))
         
-        model_holder[[n_cov]] <- hmm
+        model_holder[[as.character(n_cov)]] <- hmm
         stopCluster(cl)
     }
     
