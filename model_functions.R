@@ -18,22 +18,29 @@ library(viridis)
 library(hms)
 
 
-convert.coords <- function(df, 
-                           input_crs = CRS("+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84"),
-                           output_crs = CRS("+proj=longlat +datum=WGS84")){
+convert_coords <- function(df, 
+                           input_names = c("Long", "Lat"),
+                           input_crs = "+proj=longlat +datum=WGS84",
+                           output_crs = "+proj=utm +zone=15 +datum=WGS84 +units=m +ellps=WGS84") {
+    
     # takes a dataframe of x,y (Easting, Northing) points and converts them to output projection.
     
-    x <- colnames(df)[1]
-    y <- colnames(df)[2]
+    # ensure columns are numeric
+    for (name in input_names) {df[[name]] <- as.numeric(df[[name]])}
+    
+    # convert to new coordinate system
+    df <- df[, input_names]
+    colnames(df) <- c("x", "y")
+    
     coordinates(df) <- ~x + y
-    proj4string(df) <- input_crs
+    proj4string(df) <- CRS(input_crs)
     
-    df_out <- as.data.frame(spTransform(df, output_crs)@coords)
-    
-    return(df_out)
+    converted <- as.data.frame(spTransform(df, CRSobj=CRS(output_crs)))
+
+    return(converted)
 }
 
-fit.krig <- function(sound_data, pred_data, 
+fit_krig <- function(sound_data, pred_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
     # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
     # x, y, and dB.

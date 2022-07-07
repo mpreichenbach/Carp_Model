@@ -95,36 +95,92 @@ add_diel <- function(.data,
 
 
 add_intensity <- function(.data, 
-                          intensity_data_path,
-                          colname="dB",
-                          crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m") {
+                          new_colname = "dB",
+                          sound_samples_path = "~/Carp-Model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
+                          treatments = list(c("ChirpSaw", "Saw"), 
+                                          c("ChirpSquare", "Square"), 
+                                          c("BoatMotor", "100Hp")),
+                          input_names = c("Pond",
+                                          "Long", 
+                                          "Lat", 
+                                          "Actual.Signal", 
+                                          "RMS.SPL..dB.re.1uPa."),
+                          convert_to_utm = TRUE,
+                          crs_string = "+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m") {
     # this function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
     # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
     # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
     # PondXXTreatment, i.e., Pond27ChirpSquare.
     
-    # create column and determine trials/ponds in the provided data
-    .data[[colname]] <- 0
-    trials <- unique(.data$Trial)
+    # create column and load the sound samples
+    .data[[new_colname]] <- 0
+    df_sound <- read.csv(sound_samples_path)
+    df_sound[df_sound == "*"] <- NA
+    df_sound <- drop_na(df_sound)
+    
+    # trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
     
-    # loop through trials/ponds and update dB column with kriging predictions
-    for (trial in trials){
-        for (pond in ponds){
-            tmnt <- treatment.key(trial, pond)
-            if (tmnt == "Control"){next}
-            db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
-            subset_condition <- .data$Sound == "on" & .data$Trial == trial & .data$Pond == pond
-            sub_data <- .data[subset_condition, ]
-            if (nrow(sub_data) == 0){
-                print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
+    # convert coordinates if necessary
+    if (convert_to_utm) {
+        df_sound[, input_names[2:3]] <- convert_coords(df_sound[, input_names[2:3]],
+                                                       output_crs=crs_string)
+    }
+    
+    # rename verious columns
+    colnames(df_sound)[which(colnames(df_sound) == input_names[2])] <- "x"
+    colnames(df_sound)[which(colnames(df_sound) == input_names[3])] <- "y"
+    colnames(df_sound)[which(colnames(df_sound) == input_names[5])] <- "dB"
+    
+    # loop through trials/ponds and update new column with kriging predictions
+    for (pond in ponds) {
+        for (tmnt_pair in treatments) {
+            tel_tmnt <- tmnt_pair[1]
+            sound_tmnt <- tmnt_pair[2]
+            
+            # define telemetry sub-setting condition
+            tel_subset_bool <- .data$Sound == "on" & 
+                .data$Pond == pond & 
+                .data$Treatment == tel_tmnt
+            
+            # define sound sub-setting condition
+            sound_subset_bool <- df_sound[[input_names[1]]] == pond & 
+                df_sound[[input_names[4]]] == sound_tmnt
+            
+            # get only the relevant data for this iteration
+            tel_sub <- .data[tel_subset_bool, ]
+            sound_sub <- df_sound[sound_subset_bool,]
+            
+            if (nrow(tel_sub) == 0){
+                print(paste0("Treatment ", tel_tmnt, ", Pond ", pond, " has no data."))
                 next
             }
-            .data[subset_condition, colname] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
+            
+            .data[tel_subset_bool, new_colname] <- fit_krig(sound_sub,
+                                                            pred_data = tel_sub[, c("x", "y")],
+                                                            crs_string = crs_string)$dB
+            
         }
     }
-    return(.data)
+    
+    .data
+    
+    # for (trial in trials){
+    #     for (pond in ponds){
+    #         tmnt <- treatment.key(trial, pond)
+    #         if (tmnt == "Control"){next}
+    #         db_data <- read.csv(file.path(intensity_data_path, paste0("Pond", pond, tmnt, ".csv")))
+    #         subset_condition <- .data$Sound == "on" & .data$Trial == trial & .data$Pond == pond
+    #         sub_data <- .data[subset_condition, ]
+    #         if (nrow(sub_data) == 0){
+    #             print(paste0("Trial ", trial, ", Pond ", pond, " has no data."))
+    #             next
+    #         }
+    #         .data[subset_condition, colname] <- fit.krig(db_data, sub_data[, c("x", "y")])$dB
+    #     }
+    # }
+    # return(.data)
 }
 
 
