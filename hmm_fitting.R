@@ -1,5 +1,5 @@
 library(momentuHMM)
-
+library(parallel)
 
 fit_model <- function(.data, 
                       modelFormula,
@@ -7,7 +7,7 @@ fit_model <- function(.data,
                       numericCovs=c("Temperature", "dB"),
                       stateNames=c("exploratory", "encamped"),
                       dist=list(step="gamma", angle="vm"),
-                      initPar=list(step = c(2, 1, 1, 1), angle = c(0.01, 0.01, 0.01, 0.01))) {
+                      initPar=list(step = c(2, 1, 1, 1), angle=c(0.004, 0.004, 0.002, 0.002))) {
     
     # the pipe functions in crw_fitting remove the momentuHMMData class; this puts it back in
     .data <- .data[, ! names(.data) %in% c("step", "angle")]
@@ -95,7 +95,7 @@ fit_model <- function(.data,
     return(FullModel)
 }
 
-fit.model.list <- function(list_element) {
+fit_model_list <- function(list_element) {
     # this runs fit.model, but with a single element so that it can be entered as an argument in 
     # parallel::mclapply().
     
@@ -106,4 +106,47 @@ fit.model.list <- function(list_element) {
                      initPar=list(step=c(2, 1, 1, 1), angle=c(0.004, 0.004, 0.002, 0.002)))
     
     return(hmm)
+}
+
+hmm_parallel_fit <- function(data,
+                          step_max = 30,
+                          cluster_size = 10,
+                          n_covs = c(0, 1, 2, 3, 4, 5, 6)){
+    # fits an HMM for many models at once, using the parallel::parLapplyLB() function
+    
+    # create a list to hold the lists of fitted model, indexed by n_covs
+    model_holder <- list()
+    
+    # large step lengths messes up the fitting process; removes IDs which go above step_max
+    bad_ids <- unique(data[data$step > step_max, "ID"])
+    data <- data[! data$ID %in% bad_ids, ]
+    
+    for (n_cov in n_covs) {
+        formulas <- get_formulas(n_cov)
+        
+        # generates a list of formula/data pairs to input to fit_model_list
+        frm_list <- list()
+        for (frm in frm_list) {
+            key <- deparse(frm)
+            frm_list[[key]] <- list("formula" = frm, "data" = data)
+        }
+        
+        # set up cluster for multiprocessing
+        cl <- makeCluster(cluster_size)
+        clusterExport(cl, c("fit_model_list", "fit_model"))
+        clusterEvalQ(cl, library(momentuHMM))
+        
+        # fit all the HMMs (this can be a long process)
+        tic = Sys.time()
+        hmm <- parLapplyLB(Cl, frm_list, fit_model_list)
+        toc = Sys.time()
+        
+        print(paste0("Fitting models with ", i, " covariates is complete;"))
+        print(paste0(toc - tic, " elapsed."))
+        
+        model_holder[[n_cov]] <- hmm
+        stopCluster(cl)
+    }
+    
+    model_holder
 }
