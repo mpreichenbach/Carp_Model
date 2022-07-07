@@ -156,10 +156,10 @@ add_intensity <- function(.data,
                 next
             }
             
-            .data[tel_subset_bool, dB] <- fit_krig(sound_sub,
+            # fit kriging model and apply to the CRW positions
+            .data[tel_subset_bool, "dB"] <- fit_krig(sound_sub,
                                                    pred_data = tel_sub[, c("x", "y")],
                                                    crs_string = crs_string)$dB
-            
         }
     }
     
