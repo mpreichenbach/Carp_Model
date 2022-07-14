@@ -304,64 +304,24 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
 }
 
 
-plot_means <- function(hmm_list,
-                       save_dir = NA,
-                       parms = c("step", "angle"),
-                       factor_covs = c("Trial", "Pond", "Treatment"),
-                       state_names = c("exploratory", "encamped"),
-                       state_colors = c("#E69F00", "#56B4E9"),
-                       plotCI = TRUE,
-                       verbose = TRUE){
-    # plots the means of the fitted distributions for values in the parms arguments. It would be
-    # nice to plot mean step lengths over all factor covariates; but this requires some fancy math
-    # I don't yet know.
+plot_means <- function(hmm,
+                       factor_covs,
+                       bin_length = 1,
+                       numeric_cov = "dB",
+                       plotCI = 0.95,
+                       state_colors = c("#E69F00", "#56B4E9")) {
+    # makes a plot of the state means with shaded confidence intervals
     
-    n_models <- length(hmm_list)
-    data <- hmm_list[[1]]$data
+    data <- hmm$data
     
-    # the entries of this list are vectors of the unique values for each factor covariate
-    factor_values <- list()
-    
-    for (fac in factor_covs) {
-        factor_values[[fac]] <- unique(data[[fac]])
+    # sometimes the models have exploratory/encamped values switched
+    if (hmm$CIreal$step$est[1, 1] < hmm$CIreal$step$est[1, 2]) {
+        switch_states <- TRUE
+    } else {
+        switch_states <- FALSE
     }
     
-    
-    # this dataframe holds every combination of parameter estimates, with full name
-    df_colnames <- expand.grid(list(state = state_names, parm = parms, 
-                                    val = c("lower", "est", "upper")))
-    
-    df_colnames$FullName <- do.call(paste, c(df_colnames[c("state", "parm", "val")]))
-    
-    # very slow loop which extracts parameter estimates for each model
-    for (i in 1:n_models) {
-        hmm <- hmm_list[[i]]
-        
-        # this dataframe holds every combination of the factor covariates
-        df_factors <- expand.grid(factor_values)
-        
-        # initialize the parameter value columns
-        for (fullname in df_colnames$FullName) {
-            df_factors[[fullname]] <- 0.0
-        }
-        
-        # extract the predicted values for each covariate combination (necessarily row-by-row; v. slow)
-        for (j in 1:nrow(df_factors)) {
-            # this step must proceed row-by-row
-            estimates <- CIreal(hmm, covs = df_factors[j, factor_covs], parms = parms)
-            for (fullname in df_colnames$FullName) {
-                split_names <- df_colnames[df_colnames$FullName == fullname, ]
-                state <- as.character(split_names[1, "state"])
-                parm <- as.character(split_names[1, "parm"])
-                val <- as.character(split_names[1, "val"])
-                
-                df_factors[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state]
-            }
-        }
-        if (verbose) {print(paste0("Finished extracting parameters for model ", i, "/", n_models))}
-    }
-    
-
+    # create a dataframe to hold the predicted values
     
 }
 
