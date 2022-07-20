@@ -113,20 +113,24 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
     return(top_hmms)
 }
 
-get_mean_estimates <- function(hmm_list,
+get_mean_estimates <- function(hmm,
                                save_dir = NA,
-                               parms = c("step", "angle"),
+                               num_cov = c("dB"),
+                               bin_width = 0.5,
+                               parms = c("step"),
                                factor_covs = c("Trial", "Pond", "Treatment"),
                                state_names = c("exploratory", "encamped"),
-                               state_colors = c("#E69F00", "#56B4E9"),
-                               plotCI = TRUE,
                                verbose = TRUE){
     # plots the means of the fitted distributions for values in the parms arguments. It would be
     # nice to plot mean step lengths over all factor covariates; but this requires some fancy math
     # I don't yet know.
     
-    n_models <- length(hmm_list)
-    data <- hmm_list[[1]]$data
+    data <- hmm$data
+    
+    min_num_cov <- min(data[data[[num_cov]] > 0, num_cov], na.rm = TRUE)
+    max_num_cov <- max(data[data[[num_cov]] > 0, num_cov], na.rm = TRUE)
+    
+    num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
     
     # the entries of this list are vectors of the unique values for each factor covariate
     factor_values <- list()
@@ -135,40 +139,56 @@ get_mean_estimates <- function(hmm_list,
         factor_values[[fac]] <- unique(data[[fac]])
     }
     
-    
     # this dataframe holds every combination of parameter estimates, with full name
-    df_colnames <- expand.grid(list(state = state_names, parm = parms, 
+    df_colnames <- expand.grid(list(state = state_names, 
+                                    parm = parms, 
                                     val = c("lower", "est", "upper")))
     
     df_colnames$FullName <- do.call(paste, c(df_colnames[c("state", "parm", "val")]))
     
-    # very slow loop which extracts parameter estimates for each model
-    for (i in 1:n_models) {
-        hmm <- hmm_list[[i]]
+    # this dataframe holds every combination of the factor covariates
+    df_factors <- expand.grid(factor_values)
+    
+    # initialize a dataframe to hold the predictions
+    df_predictions <- data.frame(matrix(nrow = 0,
+                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName))))
+    colnames(num_df) <- c(factor_covs, num_cov, df_colnames$FullName)
+    
+    # this loop predicts dB given the factor covariates in the appropriate row
+    for (i in 1:nrow(df_factors)) {
+        # initialize dataframe to hold fixed factor covariates, varying num_cov, and estimates
+        num_df <- data.frame(matrix(nrow = length(num_values), 
+                                    ncol = length(c(factor_covs, num_cov, df_colnames$FullName))))
+        colnames(num_df) <- c(factor_covs, num_cov, df_colnames$FullName)
         
-        # this dataframe holds every combination of the factor covariates
-        df_factors <- expand.grid(factor_values)
-        
-        # initialize the parameter value columns
-        for (fullname in df_colnames$FullName) {
-            df_factors[[fullname]] <- 0.0
+        # set the covariate values
+        num_df[[num_cov]] <- num_values
+        for (fac in factor_covs) {
+            num_df[[fac]] <- df_factors[i, fac]
         }
         
-        # extract the predicted values for each covariate combination (necessarily row-by-row; v. slow)
-        for (j in 1:nrow(df_factors)) {
-            # this step must proceed row-by-row
-            estimates <- CIreal(hmm, covs = df_factors[j, factor_covs], parms = parms)
+        # yield estimates given the fixed covariates
+        for (j in 1:nrow(num_df)) {
+            estimates <- CIreal(hmm, covs = num_df[j, c(factor_covs, num_cov)], parms = parms)
             for (fullname in df_colnames$FullName) {
                 split_names <- df_colnames[df_colnames$FullName == fullname, ]
                 state <- as.character(split_names[1, "state"])
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
                 
-                df_factors[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state]
+                num_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state]
             }
         }
-        if (verbose) {print(paste0("Finished extracting parameters for model ", i, "/", n_models))}
+        
+        # add the full dataframe to df_predictions
+        df_predictions <- rbind(df_predictions, num_df)
+        
+        # print a progress update
+        if (verbose) {
+            print("Finished predicting parameters for covariates:")
+            print(df_factors[i, ])
+        }
     }
     
-    df_factors
+    df_predictions
 }
