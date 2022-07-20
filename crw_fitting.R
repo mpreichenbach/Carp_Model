@@ -254,9 +254,9 @@ add_temperature <- function(.data,
 
 
 add_treatment <- function(.data) {
-    # this function adds a column for treatment type
+    # this function adds a column for treatment type; requires add_sound to be run first
     
-    .data$Treatment <- "placeholder"
+    .data$Treatment <- "Silence"
     
     trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
@@ -264,7 +264,9 @@ add_treatment <- function(.data) {
     for (trial in trials){
         for (pond in ponds){
             tmnt <- treatment_key(trial, pond)
-            .data[.data$Trial == trial & .data$Pond == pond, "Treatment"] <- tmnt
+            .data[.data$Trial == trial
+                  & .data$Pond == pond
+                  & .data$Sound == "on", "Treatment"] <- tmnt
         }
     }
     
