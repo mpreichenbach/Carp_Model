@@ -116,7 +116,7 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
 get_mean_estimates <- function(hmm,
                                num_cov = c("dB"),
                                bin_width = 0.5,
-                               parms = c("step"),
+                               parms = c("step", "angle"),
                                factor_covs = c("Trial", "Pond", "Treatment"),
                                state_names = c("exploratory", "encamped"),
                                verbose = TRUE){
@@ -139,48 +139,60 @@ get_mean_estimates <- function(hmm,
     }
     
     # this dataframe holds every combination of parameter estimates, with full name
-    df_colnames <- expand.grid(list(state = state_names, 
-                                    parm = parms, 
+    df_colnames <- expand.grid(list(parm = parms, 
                                     val = c("lower", "est", "upper")))
     
-    df_colnames$FullName <- do.call(paste, c(df_colnames[c("state", "parm", "val")]))
+    df_colnames$FullName <- do.call(paste, c(df_colnames[c("parm", "val")]))
     
     # this dataframe holds every combination of the factor covariates
     df_factors <- expand.grid(factor_values)
     
     # initialize a dataframe to hold the predictions
     df_predictions <- data.frame(matrix(nrow = 0,
-                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName))))
-    colnames(num_df) <- c(factor_covs, num_cov, df_colnames$FullName)
+                                 ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
+    colnames(df_predictions) <- c(factor_covs, num_cov, "State", df_colnames$FullName)
     
     # this loop predicts dB given the factor covariates in the appropriate row
     for (i in 1:nrow(df_factors)) {
         # initialize dataframe to hold fixed factor covariates, varying num_cov, and estimates
-        num_df <- data.frame(matrix(nrow = length(num_values), 
-                                    ncol = length(c(factor_covs, num_cov, df_colnames$FullName))))
-        colnames(num_df) <- c(factor_covs, num_cov, df_colnames$FullName)
+        state_df_list <- list()
+        for (state_name in state_names) {
+            state_df <- data.frame(matrix(nrow = length(num_values), 
+                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
+            colnames(state_df) <- c(factor_covs, num_cov, "State", df_colnames$FullName)
+            
+            state_df$State <- state_name
+            
+            state_df_list[[state_name]] <- state_df
+        }
         
+        # bring together dataframes for each state
+        combined_state_df <- bind_rows(state_df_list)
+
         # set the covariate values
-        num_df[[num_cov]] <- num_values
+        combined_state_df[[num_cov]] <- num_values
         for (fac in factor_covs) {
-            num_df[[fac]] <- df_factors[i, fac]
+            combined_state_df[[fac]] <- df_factors[i, fac]
         }
         
         # yield estimates given the fixed covariates
-        for (j in 1:nrow(num_df)) {
-            estimates <- CIreal(hmm, covs = num_df[j, c(factor_covs, num_cov)], parms = parms)
+        for (j in 1:nrow(combined_state_df)) {
+            estimates <- CIreal(hmm, 
+                                covs = combined_state_df[j, c(factor_covs, num_cov)], 
+                                parms = parms)
             for (fullname in df_colnames$FullName) {
                 split_names <- df_colnames[df_colnames$FullName == fullname, ]
-                state <- as.character(split_names[1, "state"])
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
                 
-                num_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state]
+                for (state_name in state_names){
+                    combined_state_df[j, state_name] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
+                }
             }
         }
         
         # add the full dataframe to df_predictions
-        df_predictions <- rbind(df_predictions, num_df)
+        df_predictions <- rbind(df_predictions, combined_state_df)
         
         # print a progress update
         if (verbose) {

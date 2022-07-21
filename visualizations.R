@@ -304,32 +304,13 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
 }
 
 
-plot_means <- function(df_predictions,
-                       factor_covs = c("Trial", "Pond", "Treatment"),
-                       state_names = c("exploratory", "encamped"),
+plot_means <- function(df,
                        bin_length = 0.5,
-                       numeric_cov = "dB",
+                       state_names = c("exploratory", "encamped"),
                        state_colors = c("#E69F00", "#56B4E9")) {
     # makes a plot of the state means with shaded confidence intervals
     
-    # get the unique values to loop through
-    factor_values <- list()
     
-    for (fac in factor_covs) {
-        factor_values[[fac]] <- unique(data[[fac]])
-    }
-    
-    # get a dataframe of the covariate combinations
-    df_factors <- expand.grid(factor_values)
-    
-    
-    
-    # sometimes the models have exploratory/encamped values switched
-    if (hmm$CIreal$step$est[1, 1] < hmm$CIreal$step$est[1, 2]) {
-        switch_states <- TRUE
-    } else {
-        switch_states <- FALSE
-    }
     
 }
 
