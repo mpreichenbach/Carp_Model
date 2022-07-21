@@ -149,7 +149,7 @@ get_mean_estimates <- function(hmm,
     
     # initialize a dataframe to hold the predictions
     df_predictions <- data.frame(matrix(nrow = 0,
-                                 ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
+                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
     colnames(df_predictions) <- c(factor_covs, num_cov, "State", df_colnames$FullName)
     
     # this loop predicts dB given the factor covariates in the appropriate row
@@ -186,7 +186,7 @@ get_mean_estimates <- function(hmm,
                 val <- as.character(split_names[1, "val"])
                 
                 for (state_name in state_names){
-                    combined_state_df[j, state_name] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
+                    combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
                 }
             }
         }

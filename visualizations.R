@@ -305,13 +305,19 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
 
 
 plot_means <- function(df,
+                       save_path,
                        bin_length = 0.5,
                        state_names = c("exploratory", "encamped"),
                        state_colors = c("#E69F00", "#56B4E9")) {
     # makes a plot of the state means with shaded confidence intervals
     
+    # if the step means don't correspond to the exploratory/encamped intuition, then switch labels
+    if (df[df$State == "exploratory", c("est")] < df[df$State == "encamped", c("est")]) {
+        df$State <- ifelse(df$State == "exploratory", "encamped", "exploratory")
+    }
     
-    
+    # generate the plot
+    plt <- ggplot
 }
 
 
