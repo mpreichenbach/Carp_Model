@@ -304,20 +304,35 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
 }
 
 
-plot_means <- function(df,
-                       save_path,
-                       bin_length = 0.5,
-                       state_names = c("exploratory", "encamped"),
-                       state_colors = c("#E69F00", "#56B4E9")) {
+plot_predicted_means <- function(df,
+                                 save_path,
+                                 bin_length = 0.5,
+                                 state_names = c("exploratory", "encamped"),
+                                 state_colors = c("#E69F00", "#56B4E9")) {
     # makes a plot of the state means with shaded confidence intervals
     
     # if the step means don't correspond to the exploratory/encamped intuition, then switch labels
-    if (df[df$State == "exploratory", c("est")] < df[df$State == "encamped", c("est")]) {
-        df$State <- ifelse(df$State == "exploratory", "encamped", "exploratory")
+    exp_mean_step <- mean(df[df$State == state_names[1], c("step_est")])
+    enc_mean_step <- mean(df[df$State == state_names[2], c("step_est")])
+    
+    if (exp_mean_step < enc_mean_step) {
+        df$State <- ifelse(df$State == state_names[1], state_names[2], state_names[1])
     }
     
+    # ensure the state factors are in a consistent order
+    df$State <- factor(df$State, levels = state_names)
+    
     # generate the plot
-    plt <- ggplot
+    plt <- ggplot(df, aes(x = dB, y = step_est, color = State)) + 
+        geom_line() + 
+        geom_ribbon(aes(ymin = step_lower, ymax = step_upper, fill = State),
+                    alpha = 0.2,
+                    linetype="dotted") +
+        scale_fill_manual(values = state_colors) + 
+        labs(y = "Step Length Estimate") + 
+        ylim(0, 1.5)
+    
+    print(plt)
 }
 
 

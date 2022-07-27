@@ -143,6 +143,7 @@ get_mean_estimates <- function(hmm,
                                     val = c("lower", "est", "upper")))
     
     df_colnames$FullName <- do.call(paste, c(df_colnames[c("parm", "val")]))
+    df_colnames$FullName <- str_replace(df_colnames$FullName, " ", "_")
     
     # this dataframe holds every combination of the factor covariates
     df_factors <- expand.grid(factor_values)
@@ -177,6 +178,7 @@ get_mean_estimates <- function(hmm,
         
         # yield estimates given the fixed covariates
         for (j in 1:nrow(combined_state_df)) {
+            row_state <- combined_state_df[j, "State"]
             estimates <- CIreal(hmm, 
                                 covs = combined_state_df[j, c(factor_covs, num_cov)], 
                                 parms = parms)
@@ -185,9 +187,7 @@ get_mean_estimates <- function(hmm,
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
                 
-                for (state_name in state_names){
-                    combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
-                }
+                combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, row_state]
             }
         }
         
