@@ -117,7 +117,7 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
 get_param_estimates <- function(hmm,
                                num_cov = c("dB"),
                                bin_width = 0.5,
-                               parms = c("step", "angle", "gamma", "delta"),
+                               parms = c("step", "angle", "gamma"),
                                factor_covs = c("Trial", "Pond", "Treatment"),
                                state_names = c("exploratory", "encamped"),
                                verbose = TRUE){
@@ -139,67 +139,108 @@ get_param_estimates <- function(hmm,
         factor_values[[fac]] <- unique(data[[fac]])
     }
     
-    # this dataframe holds every combination of parameter estimates, with full name
-    df_colnames <- expand.grid(list(parm = parms, 
-                                    val = c("lower", "est", "upper")))
-    
-    df_colnames$FullName <- do.call(paste, c(df_colnames[c("parm", "val")]))
-    df_colnames$FullName <- str_replace_all(df_colnames$FullName, " ", "_")
-    
     # this dataframe holds every combination of the factor covariates
     df_factors <- expand.grid(factor_values)
     
-    # initialize a dataframe to hold the predictions
-    df_predictions <- data.frame(matrix(nrow = 0,
-                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
-    colnames(df_predictions) <- c(factor_covs, num_cov, "State", df_colnames$FullName)
+    # this dataframe holds every combination of movement parameter estimates, with full name
+    mov_parms <- c("step", "angle")
+    mov_colnames <- expand.grid(list(parm = mov_parms, 
+                                     val = c("lower", "est", "upper")))
     
+    mov_colnames$FullName <- do.call(paste, c(mov_colnames[c("parm", "val")]))
+    mov_colnames$FullName <- str_replace_all(mov_colnames$FullName, " ", "_")
+    
+    # initialize a dataframe to hold the movement parameter estimates
+    mov_estimates <- data.frame(matrix(nrow = 0,
+                                         ncol = length(c(factor_covs, num_cov, mov_colnames$FullName)) + 1))
+    colnames(mov_estimates) <- c(factor_covs, num_cov, "State", mov_colnames$FullName)
+    
+    # this dataframe holds the transition probalities
+    trans_parms <- c("1t1", "1t2", "2t1", "2t2")
+    trans_colnames <- expand.grid(list(parm = trans_parms, 
+                                       val = c("lower", "est", "upper")))
+    
+    trans_colnames$FullName <- do.call(paste, c(trans_colnames[c("parm", "val")]))
+    trans_colnames$FullName <- str_replace_all(trans_colnames$FullName, " ", "_")
+    
+    # initialize a dataframe to hold the transition parameter estimates
+    trans_estimates <- data.frame(matrix(nrow = 0,
+                                         ncol = length(c(factor_covs, num_cov, trans_colnames$FullName)) + 1))
+    colnames(trans_estimates) <- c(factor_covs, num_cov, trans_colnames$FullName)
+
     # this loop predicts dB given the factor covariates in the appropriate row
     for (i in 1:nrow(df_factors)) {
-        # initialize dataframe to hold fixed factor covariates, varying num_cov, and estimates
-        state_df_list <- list()
+        # initialize list to hold the movement estimate dataframe for each state
+        state_mov_list <- list()
+        
+        # initialize the dataframe to hold transition probability estimates
+        trans_df <- data.frame(matrix(nrow = length(num_values),
+                                      ncol = dim(trans_estimates)[2]))
+        colnames(trans_df) <- colnames(trans_estimates)
+        
+        # set the covariate values in the transition estimates dataframe
+        for (fac in factor_covs) {
+            trans_df[[fac]] <- df_factors[i, fac]
+            trans_df[[num_cov]] <- num_values
+        }
+        
+        # initialize the movement parameters estimate dataframe, and fix covariate values
         for (state_name in state_names) {
             state_df <- data.frame(matrix(nrow = length(num_values), 
-                                        ncol = length(c(factor_covs, num_cov, df_colnames$FullName)) + 1))
-            colnames(state_df) <- c(factor_covs, num_cov, "State", df_colnames$FullName)
+                                        ncol = dim(mov_estimates)[2]))
+            colnames(state_df) <- colnames(mov_estimates)
             
             state_df$State <- state_name
             
-            state_df_list[[state_name]] <- state_df
-        }
-        
-        # set the covariate values
-        for (state_name in state_names) {
+            state_mov_list[[state_name]] <- state_df
             for (fac in factor_covs) {
-                state_df_list[[state_name]][[fac]] <- df_factors[i, fac]
-                state_df_list[[state_name]][[num_cov]] <- num_values
+                state_mov_list[[state_name]][[fac]] <- df_factors[i, fac]
+                state_mov_list[[state_name]][[num_cov]] <- num_values
             }
         }
-
+        
         # yield estimates given the fixed covariates
-        for (j in 1:nrow(state_df_list[[state_names[1]]])) {
-            row_covs <- state_df_list[[state_names[1]]][j, c(factor_covs, num_cov)]
+        for (j in 1:nrow(state_mov_list[[state_names[1]]])) {
+            row_covs <- state_mov_list[[state_names[1]]][j, c(factor_covs, num_cov)]
             estimates <- CIreal(hmm, 
                                 covs = row_covs, 
                                 parms = parms)
-            for (fullname in df_colnames$FullName) {
-                split_names <- df_colnames[df_colnames$FullName == fullname, ]
+            for (fullname in mov_colnames$FullName) {
+                split_names <- mov_colnames[mov_colnames$FullName == fullname, ]
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
-                
-                for (state_name in state_names) {
-                    state_df_list[[state_name]][j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
+                if (grepl("step", fullname) | grepl("angle", fullname)){
+                    for (state_name in state_names) {
+                        state_mov_list[[state_name]][j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
+                    }
+                } else {
+                    if ("1t1" == parm) {
+                        r_name <- state_names[1]
+                        c_name <- state_names[1]
+                    } else if ("1t2" == parm) {
+                        r_name <- state_names[1]
+                        c_name <- state_names[2]
+                    } else if ("2t1" == parm) {
+                        r_name <- state_names[2]
+                        c_name <- state_names[1]
+                    } else if ("2t2" == parm) {
+                        r_name <- state_names[2]
+                        c_name <- state_names[2]
+                    }
+                    
+                    trans_df[j, fullname] <- as.data.frame(estimates$gamma[[val]])[r_name, c_name]
                 }
-                
-                #combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, row_state]
             }
         }
         
-        # bring together dataframes for each state
-        combined_state_df <- bind_rows(state_df_list)
+        # bring together movement dataframes for each state
+        combined_mov_df <- bind_rows(state_mov_list)
         
-        # add the full dataframe to df_predictions
-        df_predictions <- rbind(df_predictions, combined_state_df)
+        # add the full movement dataframe to mov_estimates
+        mov_estimates <- rbind(mov_estimates, combined_mov_df)
+        
+        # add the full transition dataframe to trans_estimates
+        trans_estimates <- rbind(trans_estimates, trans_df)
         
         # print a progress update
         if (verbose) {
@@ -208,5 +249,5 @@ get_param_estimates <- function(hmm,
         }
     }
     
-    df_predictions
+    list("mov" = mov_estimates, "trans" = trans_estimates)
 }
