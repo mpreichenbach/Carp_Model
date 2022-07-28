@@ -305,8 +305,10 @@ db.means.plot <- function(models, ba=NA, state_colors=c("#E69F00", "#56B4E9"), s
 
 
 plot_predicted_means <- function(df,
-                                 save_path,
-                                 bin_length = 0.5,
+                                 x_col = "dB",
+                                 y_cols = c("step_lower", "step_est", "step_upper"),
+                                 y_label = "Mean Step Estimate (meters)",
+                                 plot_title = "",
                                  state_names = c("exploratory", "encamped"),
                                  state_colors = c("#E69F00", "#56B4E9")) {
     # makes a plot of the state means with shaded confidence intervals
@@ -323,16 +325,17 @@ plot_predicted_means <- function(df,
     df$State <- factor(df$State, levels = state_names)
     
     # generate the plot
-    plt <- ggplot(df, aes(x = dB, y = step_est, color = State)) + 
+    plt <- ggplot(df, aes_(x = as.name(x_col), y = as.name(y_cols[2]), col = as.name("State"))) + 
         geom_line() + 
-        geom_ribbon(aes(ymin = step_lower, ymax = step_upper, fill = State),
+        geom_ribbon(aes_(ymin = as.name(y_cols[1]), ymax = as.name(y_cols[3]), fill = as.name("State")),
                     alpha = 0.2,
                     linetype="dotted") +
         scale_fill_manual(values = state_colors) + 
-        labs(y = "Step Length Estimate") + 
-        ylim(0, 1.5)
+        labs(x = x_col, y = y_label, title = plot_title) + 
+        ylim(0, 1.2 * max(df[[y_cols[2]]])) + 
+        theme(plot.title = element_text(hjust = 0.5))
     
-    print(plt)
+    plt
 }
 
 
