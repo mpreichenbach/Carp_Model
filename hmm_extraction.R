@@ -168,29 +168,35 @@ get_param_estimates <- function(hmm,
             state_df_list[[state_name]] <- state_df
         }
         
-        # bring together dataframes for each state
-        combined_state_df <- bind_rows(state_df_list)
-
         # set the covariate values
-        combined_state_df[[num_cov]] <- num_values
-        for (fac in factor_covs) {
-            combined_state_df[[fac]] <- df_factors[i, fac]
+        for (state_name in state_names) {
+            for (fac in factor_covs) {
+                state_df_list[[state_name]][[fac]] <- df_factors[i, fac]
+                state_df_list[[state_name]][[num_cov]] <- num_values
+            }
         }
-        
+
         # yield estimates given the fixed covariates
-        for (j in 1:nrow(combined_state_df)) {
-            row_state <- combined_state_df[j, "State"]
+        for (j in 1:nrow(state_df_list[[state_names[1]]])) {
+            row_covs <- state_df_list[[state_names[1]]][j, c(factor_covs, num_cov)]
             estimates <- CIreal(hmm, 
-                                covs = combined_state_df[j, c(factor_covs, num_cov)], 
+                                covs = row_covs, 
                                 parms = parms)
             for (fullname in df_colnames$FullName) {
                 split_names <- df_colnames[df_colnames$FullName == fullname, ]
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
                 
-                combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, row_state]
+                for (state_name in state_names) {
+                    state_df_list[[state_name]][j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
+                }
+                
+                #combined_state_df[j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, row_state]
             }
         }
+        
+        # bring together dataframes for each state
+        combined_state_df <- bind_rows(state_df_list)
         
         # add the full dataframe to df_predictions
         df_predictions <- rbind(df_predictions, combined_state_df)
