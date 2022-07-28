@@ -1,6 +1,7 @@
 library(momentuHMM)
 library(readr)
 library(dplyr)
+library(stringr)
 
 ##### These functions extract info from the fitted HMM models
 
@@ -143,7 +144,7 @@ get_param_estimates <- function(hmm,
                                     val = c("lower", "est", "upper")))
     
     df_colnames$FullName <- do.call(paste, c(df_colnames[c("parm", "val")]))
-    df_colnames$FullName <- str_replace(df_colnames$FullName, " ", "_")
+    df_colnames$FullName <- str_replace_all(df_colnames$FullName, " ", "_")
     
     # this dataframe holds every combination of the factor covariates
     df_factors <- expand.grid(factor_values)
