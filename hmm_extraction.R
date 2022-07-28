@@ -165,7 +165,7 @@ get_param_estimates <- function(hmm,
     
     # initialize a dataframe to hold the transition parameter estimates
     trans_estimates <- data.frame(matrix(nrow = 0,
-                                         ncol = length(c(factor_covs, num_cov, trans_colnames$FullName)) + 1))
+                                         ncol = length(c(factor_covs, num_cov, trans_colnames$FullName))))
     colnames(trans_estimates) <- c(factor_covs, num_cov, trans_colnames$FullName)
 
     # this loop predicts dB given the factor covariates in the appropriate row
@@ -202,34 +202,38 @@ get_param_estimates <- function(hmm,
         # yield estimates given the fixed covariates
         for (j in 1:nrow(state_mov_list[[state_names[1]]])) {
             row_covs <- state_mov_list[[state_names[1]]][j, c(factor_covs, num_cov)]
-            estimates <- CIreal(hmm, 
-                                covs = row_covs, 
-                                parms = parms)
+            estimates <- CIreal(hmm, covs = row_covs, parms = parms)
+            
+            # get movement parameter estimates
             for (fullname in mov_colnames$FullName) {
                 split_names <- mov_colnames[mov_colnames$FullName == fullname, ]
                 parm <- as.character(split_names[1, "parm"])
                 val <- as.character(split_names[1, "val"])
-                if (grepl("step", fullname) | grepl("angle", fullname)){
-                    for (state_name in state_names) {
-                        state_mov_list[[state_name]][j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
-                    }
-                } else {
-                    if ("1t1" == parm) {
-                        r_name <- state_names[1]
-                        c_name <- state_names[1]
-                    } else if ("1t2" == parm) {
-                        r_name <- state_names[1]
-                        c_name <- state_names[2]
-                    } else if ("2t1" == parm) {
-                        r_name <- state_names[2]
-                        c_name <- state_names[1]
-                    } else if ("2t2" == parm) {
-                        r_name <- state_names[2]
-                        c_name <- state_names[2]
-                    }
-                    
-                    trans_df[j, fullname] <- as.data.frame(estimates$gamma[[val]])[r_name, c_name]
+                for (state_name in state_names) {
+                    state_mov_list[[state_name]][j, fullname] <- as.data.frame(estimates[[parm]][[val]])[1, state_name]
                 }
+            }
+            
+            # get transition probability estimates
+            for (fullname in trans_colnames$FullName) {
+                split_names <- trans_colnames[trans_colnames$FullName == fullname, ]
+                parm <- as.character(split_names[1, "parm"])
+                val <- as.character(split_names[1, "val"])
+                if ("1t1" == parm) {
+                    r_name <- state_names[1]
+                    c_name <- state_names[1]
+                } else if ("1t2" == parm) {
+                    r_name <- state_names[1]
+                    c_name <- state_names[2]
+                } else if ("2t1" == parm) {
+                    r_name <- state_names[2]
+                    c_name <- state_names[1]
+                } else if ("2t2" == parm) {
+                    r_name <- state_names[2]
+                    c_name <- state_names[2]
+                }
+                
+                trans_df[j, fullname] <- as.data.frame(estimates$gamma[[val]])[r_name, c_name]
             }
         }
         
