@@ -113,10 +113,10 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
     return(top_hmms)
 }
 
-get_mean_estimates <- function(hmm,
+get_param_estimates <- function(hmm,
                                num_cov = c("dB"),
                                bin_width = 0.5,
-                               parms = c("step", "angle"),
+                               parms = c("step", "angle", "gamma", "delta"),
                                factor_covs = c("Trial", "Pond", "Treatment"),
                                state_names = c("exploratory", "encamped"),
                                verbose = TRUE){
