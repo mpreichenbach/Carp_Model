@@ -338,7 +338,65 @@ plot_predicted_means <- function(df,
     plt
 }
 
+library(patchwork)
 
+plot_transition_probs <- function(df,
+                                  x_col = "dB",
+                                  plot_title = "",
+                                  state_names = c("exploratory", "encamped")) {
+    # makes a plot with 4 subplots with the transition probabilities as a function of the cov column
+    
+    # plot of the transition probabilities for state 1 to state 1
+    plt_1t1 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("1t1_est"))) +
+            geom_line() +
+            geom_ribbon(aes_(ymin=as.name("1t1_lower"), ymax=as.name("1t1_upper")),
+                        alpha=0.2,
+                        linetype="dotted",
+                        color="grey") +
+            labs(x=x_col, y="", title = paste0(state_names[1], " to ", state_names[1])) +
+            ylim(0, 1) + 
+            theme(plot.title=element_text(hjust=0.5))
+    
+    # plot of the transition probabilities for state 1 to state 2
+    plt_1t2 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("1t2_est"))) +
+        geom_line() +
+        geom_ribbon(aes_(ymin=as.name("1t2_lower"), ymax=as.name("1t2_upper")),
+                    alpha=0.2,
+                    linetype="dotted",
+                    color="grey") +
+        labs(x=x_col, y="", title = paste0(state_names[1], " to ", state_names[2])) +
+        ylim(0, 1) + 
+        theme(plot.title=element_text(hjust=0.5))
+    
+    # plot of the transition probabilities for state 2 to state 1
+    plt_2t1 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("2t1_est"))) +
+        geom_line() +
+        geom_ribbon(aes_(ymin=as.name("2t1_lower"), ymax=as.name("2t1_upper")),
+                    alpha=0.2,
+                    linetype="dotted",
+                    color="grey") +
+        labs(x=x_col, y="", title = paste0(state_names[2], " to ", state_names[1])) +
+        ylim(0, 1) + 
+        theme(plot.title=element_text(hjust=0.5))
+    
+    #plot of the transition probabilities for state 2 to state 2
+    plt_2t2 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("2t2_est"))) +
+        geom_line() +
+        geom_ribbon(aes_(ymin=as.name("2t2_lower"), ymax=as.name("2t2_upper")),
+                    alpha=0.2,
+                    linetype="dotted",
+                    color="grey") +
+        labs(x=x_col, y="", title = paste0(state_names[2], " to ", state_names[2])) +
+        ylim(0, 1) + 
+        theme(plot.title=element_text(hjust=0.5))
+    
+    # bring the plots together (uses the patchwork library)
+    quad_plot <- plt_1t1 + plt_1t2 + plt_2t1 + plt_2t2 + 
+        plot_annotation(title=plot_title,
+                        theme = theme(plot.title = element_text(hjust = 0.5)))
+    
+    quad_plot
+}
 
 
 
