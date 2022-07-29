@@ -1,5 +1,6 @@
 library(grid)
 library(gtable)
+library(patchwork)
 library(tidyverse)
 library(momentuHMM)
 
@@ -338,8 +339,6 @@ plot_predicted_means <- function(df,
     plt
 }
 
-library(patchwork)
-
 plot_transition_probs <- function(df,
                                   x_col = "dB",
                                   plot_title = "",
@@ -348,14 +347,14 @@ plot_transition_probs <- function(df,
     
     # plot of the transition probabilities for state 1 to state 1
     plt_1t1 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("1t1_est"))) +
-            geom_line() +
-            geom_ribbon(aes_(ymin=as.name("1t1_lower"), ymax=as.name("1t1_upper")),
-                        alpha=0.2,
-                        linetype="dotted",
-                        color="grey") +
-            labs(x=x_col, y="", title = paste0(state_names[1], " to ", state_names[1])) +
-            ylim(0, 1) + 
-            theme(plot.title=element_text(hjust=0.5))
+        geom_line() +
+        geom_ribbon(aes_(ymin=as.name("1t1_lower"), ymax=as.name("1t1_upper")),
+                    alpha=0.2,
+                    linetype="dotted",
+                    color="grey") +
+        labs(x=x_col, y="", title = paste0(state_names[1], " to ", state_names[1])) +
+        ylim(0, 1) + 
+        theme(plot.title=element_text(hjust=0.5))
     
     # plot of the transition probabilities for state 1 to state 2
     plt_1t2 <- ggplot(df, aes_(x=as.name(x_col), y=as.name("1t2_est"))) +
@@ -397,7 +396,6 @@ plot_transition_probs <- function(df,
     
     quad_plot
 }
-
 
 
 
