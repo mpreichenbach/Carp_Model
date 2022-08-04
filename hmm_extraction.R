@@ -142,7 +142,7 @@ get_param_estimates <- function(hmm,
     # this dataframe holds every combination of the factor covariates
     df_factors <- expand.grid(factor_values)
     
-    # this dataframe holds every combination of movement parameter estimates, with full name
+    # this dataframe holds the movement parameter column names
     mov_parms <- c("step", "angle")
     mov_colnames <- expand.grid(list(parm = mov_parms, 
                                      val = c("lower", "est", "upper")))
@@ -155,7 +155,7 @@ get_param_estimates <- function(hmm,
                                          ncol = length(c(factor_covs, num_cov, mov_colnames$FullName)) + 1))
     colnames(mov_estimates) <- c(factor_covs, num_cov, "State", mov_colnames$FullName)
     
-    # this dataframe holds the transition probalities
+    # this dataframe holds the transition probability column names
     trans_parms <- c("1t1", "1t2", "2t1", "2t2")
     trans_colnames <- expand.grid(list(parm = trans_parms, 
                                        val = c("lower", "est", "upper")))
@@ -168,7 +168,7 @@ get_param_estimates <- function(hmm,
                                          ncol = length(c(factor_covs, num_cov, trans_colnames$FullName))))
     colnames(trans_estimates) <- c(factor_covs, num_cov, trans_colnames$FullName)
 
-    # this loop predicts dB given the factor covariates in the appropriate row
+    # this loop predicts parameters with particular dB and factor covariates
     for (i in 1:nrow(df_factors)) {
         # initialize list to hold the movement estimate dataframe for each state
         state_mov_list <- list()
@@ -255,3 +255,52 @@ get_param_estimates <- function(hmm,
     
     list("mov" = mov_estimates, "trans" = trans_estimates)
 }
+
+
+get_stationary_probs <- function(hmm, 
+                                 variable_num_cov = "dB",
+                                 factor_covs = c("Trial", "Pond", "Treatment"),
+                                 state_names = c("exploratory", "encamped")){
+    # because the momentuHMM::stationary function works differently than momentuHMM::CIreal (it can
+    # take a multi-row dataframe of covariates instead of a single-row), the functionality here is
+    # not included in get_param_estimates. However, it works much the same way (just faster).
+    
+    data <- hmm$data
+    
+    # remove the > 0 bit when we have more reasonable dB maps
+    min_num_cov <- min(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
+    max_num_cov <- max(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
+    
+    num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
+    
+    # the entries of this list are vectors of the unique values for each factor covariate
+    factor_values <- list()
+    
+    for (fac in factor_covs) {
+        factor_values[[fac]] <- unique(data[[fac]])
+    }
+    
+    # this dataframe holds every combination of the factor covariates
+    df_factors <- expand.grid(factor_values)
+    
+    # make a dataframe to hold the estimates
+    est_holder <- data.frame(matrix(nrow = 0, ncol = length(c(factor_covs, state_names))))
+    colnames(est_holder) <- 
+    for (r in 1:nrow(df_factors)) {
+        f_covs <- df_factors[i]
+        estimates <- plotStationary(hmm,
+                                    covs = f_covs,
+                                    )
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
