@@ -339,6 +339,36 @@ plot_predicted_means <- function(df,
     plt
 }
 
+plot_temps <- function(tdata,
+                       temp_col = "Temp_C",
+                       time_col = "DateTime",
+                       group_col = c("Trial", "Pond"),
+                       plot_title = "",
+                       save_path = NULL) {
+    # plots the temperature time series, with fixed_cols being plotted in the same plot
+    tdata[[group_col]] <- as.factor(tdata[[group_col]])
+    
+    plt <- ggplot(tdata, aes_(x=as.name(time_col), 
+                              y=as.name(temp_col), 
+                              group=as.name(group_col), 
+                              color=as.name(group_col))) +
+        geom_point() +
+        geom_line() +
+        labs(x="Time", y="Temperature (\u00B0C)") +
+        ggtitle(plot_title) +
+        theme(axis.text.x = element_blank(),
+              axis.ticks.x = element_blank(),
+              axis.line.x.bottom = element_line(color="black"),
+              axis.line.y.left = element_line(color="black"),
+              plot.title = element_text(hjust = 0.5))
+
+    if (!is.null(save_path)) {
+        ggsave(save_path, plt, width=8, height=5, units="in")
+    }
+    
+    plt
+}
+
 plot_transition_probs <- function(df,
                                   x_col = "dB",
                                   plot_title = "",
