@@ -116,21 +116,21 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
 
 get_param_estimates <- function(hmm,
                                num_cov = c("dB"),
-                               bin_width = 0.5,
+                               n_bins = 100,
                                parms = c("step", "angle", "gamma"),
                                factor_covs = c("Trial", "Pond", "Treatment"),
                                state_names = c("exploratory", "encamped"),
                                verbose = TRUE){
     # plots the means of the fitted distributions for values in the parms arguments. It would be
-    # nice to plot mean step lengths over all factor covariates; but this requires some fancy math
-    # I don't yet know.
+    # nice to plot mean step lengths averaged over all factor covariates; but this requires some 
+    #fancy math I don't yet know.
     
     data <- hmm$data
     
     min_num_cov <- min(data[data[[num_cov]] > 0, num_cov], na.rm = TRUE)
     max_num_cov <- max(data[data[[num_cov]] > 0, num_cov], na.rm = TRUE)
     
-    num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
+    num_values <- seq(from = min_num_cov, to = max_num_cov, length.out=n_bins)
     
     # the entries of this list are vectors of the unique values for each factor covariate
     factor_values <- list()
@@ -257,42 +257,42 @@ get_param_estimates <- function(hmm,
 }
 
 
-get_stationary_probs <- function(hmm, 
-                                 variable_num_cov = "dB",
-                                 factor_covs = c("Trial", "Pond", "Treatment"),
-                                 state_names = c("exploratory", "encamped")){
-    # because the momentuHMM::stationary function works differently than momentuHMM::CIreal (it can
-    # take a multi-row dataframe of covariates instead of a single-row), the functionality here is
-    # not included in get_param_estimates. However, it works much the same way (just faster).
-    
-    data <- hmm$data
-    
-    # remove the > 0 bit when we have more reasonable dB maps
-    min_num_cov <- min(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
-    max_num_cov <- max(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
-    
-    num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
-    
-    # the entries of this list are vectors of the unique values for each factor covariate
-    factor_values <- list()
-    
-    for (fac in factor_covs) {
-        factor_values[[fac]] <- unique(data[[fac]])
-    }
-    
-    # this dataframe holds every combination of the factor covariates
-    df_factors <- expand.grid(factor_values)
-    
-    # make a dataframe to hold the estimates
-    est_holder <- data.frame(matrix(nrow = 0, ncol = length(c(factor_covs, state_names))))
-    colnames(est_holder) <- 
-    for (r in 1:nrow(df_factors)) {
-        f_covs <- df_factors[i]
-        estimates <- plotStationary(hmm,
-                                    covs = f_covs,
-                                    )
-    }
-}
+# get_stationary_probs <- function(hmm, 
+#                                  variable_num_cov = "dB",
+#                                  factor_covs = c("Trial", "Pond", "Treatment"),
+#                                  state_names = c("exploratory", "encamped")){
+#     # because the momentuHMM::stationary function works differently than momentuHMM::CIreal (it can
+#     # take a multi-row dataframe of covariates instead of a single-row), the functionality here is
+#     # not included in get_param_estimates. However, it works much the same way (just faster).
+#     
+#     data <- hmm$data
+#     
+#     # remove the > 0 bit when we have more reasonable dB maps
+#     min_num_cov <- min(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
+#     max_num_cov <- max(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
+#     
+#     num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
+#     
+#     # the entries of this list are vectors of the unique values for each factor covariate
+#     factor_values <- list()
+#     
+#     for (fac in factor_covs) {
+#         factor_values[[fac]] <- unique(data[[fac]])
+#     }
+#     
+#     # this dataframe holds every combination of the factor covariates
+#     df_factors <- expand.grid(factor_values)
+#     
+#     # make a dataframe to hold the estimates
+#     est_holder <- data.frame(matrix(nrow = 0, ncol = length(c(factor_covs, state_names))))
+#     colnames(est_holder) <- 
+#     for (r in 1:nrow(df_factors)) {
+#         f_covs <- df_factors[i]
+#         estimates <- plotStationary(hmm,
+#                                     covs = f_covs,
+#                                     )
+#     }
+# }
 
 
 
