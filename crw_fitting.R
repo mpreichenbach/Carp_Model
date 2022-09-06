@@ -96,9 +96,6 @@ add_diel <- function(.data,
 
 add_intensity <- function(.data, 
                           sound_samples_path,
-                          treatments = list(c("ChirpSaw", "Saw"), 
-                                          c("ChirpSquare", "Square"), 
-                                          c("BoatMotor", "100Hp")),
                           input_names = c("Pond",
                                           "Long", 
                                           "Lat", 
@@ -113,13 +110,14 @@ add_intensity <- function(.data,
     # PondXXTreatment, i.e., Pond27ChirpSquare.
     
     # create column and load the sound samples
-    .data$dB <- 0
+    .data$dB <- 0 
     df_sound <- read.csv(sound_samples_path)
     df_sound[df_sound == "*"] <- NA
     df_sound <- drop_na(df_sound)
     
     # trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
+    treatments <- unique(.data$Treatment)
     
     # convert coordinates if necessary
     if (convert_to_utm) {
@@ -127,21 +125,17 @@ add_intensity <- function(.data,
                                                        output_crs=crs_string)
     }
     
-    # rename verious columns
+    # rename various columns
     colnames(df_sound)[which(colnames(df_sound) == input_names[2])] <- "x"
     colnames(df_sound)[which(colnames(df_sound) == input_names[3])] <- "y"
     colnames(df_sound)[which(colnames(df_sound) == input_names[5])] <- "dB"
     
     # loop through trials/ponds and update new column with kriging predictions
     for (pond in ponds) {
-        for (tmnt_pair in treatments) {
-            tel_tmnt <- tmnt_pair[1]
-            sound_tmnt <- tmnt_pair[2]
-            
+        for (tmnt in treatments) {
             # define telemetry sub-setting condition
-            tel_subset_bool <- .data$Sound == "on" & 
-                .data$Pond == pond & 
-                .data$Treatment == tel_tmnt
+            tel_off_bool <- .data$Sound == "off" & .data$Pond == pond & .data$Treatment == tmnt
+            tel_on_bool <- .data$Sound == "on" & .data$Pond == pond & .data$Treatment == tmnt
             
             # define sound sub-setting condition
             sound_subset_bool <- df_sound[[input_names[1]]] == pond & 
@@ -150,14 +144,18 @@ add_intensity <- function(.data,
             # get only the relevant data for this iteration
             tel_sub <- .data[tel_subset_bool, ]
             sound_sub <- df_sound[sound_subset_bool,]
+            min_intensity <- min(df_sound[[input_names[5]]])
             
             if (nrow(tel_sub) == 0){
                 print(paste0("Treatment ", tel_tmnt, ", Pond ", pond, " has no data."))
                 next
             }
             
-            # fit kriging model and apply to the CRW positions
-            .data[tel_subset_bool, "dB"] <- fit_krig(sound_sub,
+            # for sound-off times, set dB to minimum recorded value
+            .data[tel_off_bool, "dB"] <- min_intensity
+            
+            # fit kriging model and update the sound-on dB values
+            .data[tel_on_bool, "dB"] <- fit_krig(sound_sub,
                                                    pred_data = tel_sub[, c("x", "y")],
                                                    crs_string = crs_string)$dB
         }
