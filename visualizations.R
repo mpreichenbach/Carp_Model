@@ -429,8 +429,25 @@ plot_transition_probs <- function(df,
 
 
 
-
-
+# for (repn in 1:24) {
+#     hmm <- hmms30[[repn]]
+#     if (grepl("dB", format(hmm$conditions$formula))) {
+#         df0 <- readRDS(paste0("D:/Carp-Model/Parameter Estimates/30min/dB - Means/Repetition ", repn, ".rds"))
+#         rep_path <- paste0("D:/Carp-Model/Visualizations/30min BA/Means with CIs/Repetition ", repn)
+#         dir.create(rep_path)
+#         for (trial in 1:5) {
+#             for (pond in c(26, 27, 30, 31)) {
+#                 for (tmnt in c("Control", "BoatMotor", "ChirpSaw", "ChirpSquare")) {
+#                     df <- df0[df0$Trial == trial & df0$Pond == pond & df$Treatment == tmnt, ]
+#                     plot_title <- paste("Trial", trial, "Pond", pond, tmnt)
+#                     fname <- str_replace(plot_title, " ", "_")
+#                     plt <- plot_predicted_means(df, plot_title = plot_title)
+#                     ggsave(paste0(rep_path, fname, ".png"), plt, )
+#                 }
+#             }
+#         }
+#     }
+# }
 
 
 

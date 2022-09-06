@@ -480,11 +480,11 @@ treatment_key <- function(trial, pond){
     
     if (trial == 1) {
         if (pond == 31) {
-            treatment <- "ChirpSaw"
+            treatment <- "Saw"
         } else if (pond == 30) {
             treatment <- 'BoatMotor'
         } else if (pond == 27) {
-            treatment <- 'ChirpSquare'
+            treatment <- 'Square'
         } else if (pond == 26) {
             treatment <- "Control"
         }
@@ -493,20 +493,20 @@ treatment_key <- function(trial, pond){
         if (pond == 31) {
             treatment <- "Control"
         } else if (pond == 30) {
-            treatment <- "ChirpSaw"
+            treatment <- "Saw"
         } else if (pond == 27) {
             treatment <- "BoatMotor"
         } else if (pond == 26) {
-            treatment <- 'ChirpSquare'
+            treatment <- 'Square'
         }
     }
     if (trial == 3) {
         if (pond == 31) {
-            treatment <- 'ChirpSquare'
+            treatment <- 'Square'
         } else if (pond == 30) {
             treatment <- "Control"
         } else if (pond == 27) {
-            treatment <- "ChirpSaw"
+            treatment <- "Saw"
         } else if (pond == 26) {
             treatment <- "BoatMotor"
         }
@@ -515,18 +515,18 @@ treatment_key <- function(trial, pond){
         if (pond == 31) {
             treatment <- "BoatMotor"
         } else if (pond == 30) {
-            treatment <- 'ChirpSquare'
+            treatment <- 'Square'
         } else if (pond == 27) {
             treatment <- 'Control'
         } else if (pond == 26) {
-            treatment <- "ChirpSaw"
+            treatment <- "Saw"
         }
     }
     if (trial == 5) {
         if (pond == 31) {
-            treatment <- 'ChirpSquare'
+            treatment <- 'Square'
         } else if (pond == 30) {
-            treatment <- "ChirpSaw"
+            treatment <- "Saw"
         } else if (pond == 27) {
             treatment <- "BoatMotor"
         } else if (pond == 26) {
