@@ -139,15 +139,15 @@ add_intensity <- function(.data,
             
             # define sound sub-setting condition
             sound_subset_bool <- df_sound[[input_names[1]]] == pond & 
-                df_sound[[input_names[4]]] == sound_tmnt
+                df_sound[[input_names[4]]] == tmnt
             
             # get only the relevant data for this iteration
-            tel_sub <- .data[tel_subset_bool, ]
+            tel_sub <- .data[tel_on_bool, ]
             sound_sub <- df_sound[sound_subset_bool,]
             min_intensity <- min(df_sound[[input_names[5]]])
             
             if (nrow(tel_sub) == 0){
-                print(paste0("Treatment ", tel_tmnt, ", Pond ", pond, " has no data."))
+                print(paste0("Treatment ", tmnt, ", Pond ", pond, " has no data."))
                 next
             }
             
