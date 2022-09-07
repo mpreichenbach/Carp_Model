@@ -72,13 +72,13 @@ add_diel <- function(.data,
                      day_night_values=c("Day", "Night"), 
                      latlong=c(38.9122061924, -92.2795993947), 
                      timezone="America/Chicago"){
-    # adds a column of day/night values given in dn_vals vector
+    # adds a column of day/night values given in day_night_values vector
     
     .data$Diel <- day_night_values[2]
     all_dates <- unique(as.Date(.data[,time_name]))
-    
-    for (the_date in all_dates){
-        the_date <- as.Date(the_date)
+
+    for (the_date in all_dates) {
+        the_date <- as.Date(the_date, origin="1970-01-01")
         sun_times <- getSunlightTimes(date=the_date,
                                       lat=latlong[1],
                                       lon=latlong[2],
@@ -115,7 +115,7 @@ add_intensity <- function(.data,
     df_sound[df_sound == "*"] <- NA
     df_sound <- drop_na(df_sound)
     
-    # trials <- unique(.data$Trial)
+    trials <- unique(.data$Trial)
     ponds <- unique(.data$Pond)
     treatments <- unique(.data$Treatment)
     
