@@ -104,46 +104,66 @@ correct_tags <- function(trial, pond){
 }
 
 
-get_formulas <- function(nCov){
+get_formulas <- function(nCov, 
+                         include_diel=FALSE) {
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
-    # "Trial", "Pond", "Diel", "Temperature", "dB", "Treatment". Most subsets of the telemetry data
-    # only have one value for diel, which will cause problems in model fitting. For these cases, use
-    # the default value of the include_diel argument. If the time block of interest contains sunrise
-    # or sunset, the data will contain 0, 1 values for diel, and include_diel should be set to TRUE.
+    # "Trial", "Temperature", "dB", "Treatment". Additionally, we allow the option of includeing
+    # "Diel" (aka, day/night) as a covariate.
     
-    # If we ever study a different collection, 
-    # it would be helpful to expand this function to allow for covariate name inputs, and an
-    # n-choose-k functionality to return all possible formulas with nCov covariates.
-    
-    if (!(nCov %in% c(0, 1, 2, 3, 4, 5))){
-        stop("nCov must be 0, 1, 2, 3, 4, or 5.")
+    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))) {
+        stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
     }
     
-    if (nCov == 0){
-        names <- c("~1")
-    }else if (nCov == 1){
-        names <- c("~Trial", "~Temperature", "~dB", "~Treatment")
-    }else if (nCov == 2){
-        names <- c("~Trial+Temperature", "~Trial+dB", "~Trial+Treatment", "~Temperature+dB", 
-                   "~Temperature+Treatment", "~dB+Treatment", "~dB:Treatment")
-    }else if (nCov == 3){
-        names <- c("~Trial+Temperature+dB", "~Trial+Temperature+Treatment", "~Trial+dB+Treatment", 
-                   "~Trial+dB:Treatment", "~Temperature+dB+Treatment", "~Temperature+dB:Treatment", 
+    if ((nCov == 6) & include_diel==FALSE) {
+        stop("For nCov == 6 to be valid, include_diel must be TRUE.")
+    }
+    
+    # yield a character vector of formulas with nCov covariates, including "Diel"
+    if (nCov == 0) {
+        frm_names <- c("~1")
+    } else if (nCov == 1) {
+        frm_names <- c("~Trial", "~Temperature", "~Diel", "~dB", "~Treatment")
+    } else if (nCov == 2) {
+        frm_names <- c("~Trial+Temperature", "~Trial+Diel", "~Trial+dB", "~Trial+Treatment",
+                   "~Temperature+Diel", "~Temperature+Diel", "~Temperature+dB", 
+                   "~Temperature+Treatment", "~Diel+dB", "~Diel+Treatment", "~dB+Treatment",
+                   "~dB:Treatment")
+    } else if (nCov == 3) {
+        frm_names <- c("~Trial+Temperature+Diel", "~Trial+Temperature+dB", 
+                   "~Trial+Temperature+Treatment", "~Trial+Diel+dB", "~Trial+Diel+Treatment",
+                   "~Trial+dB+Treatment", "~Trial+dB:Treatment", "~Temperature+Diel+dB",
+                   "~Temperature+Diel+Treatment", "~Temperature+dB+Treatment", 
+                   "~Temperature+dB:Treatment", "~Diel+dB+Treatment", "~Diel+dB:Treatment",
                    "~dB*Treatment")
-    }else if (nCov == 4){
-        names <- c("~Trial+Temperature+dB+Treatment", "~Trial+Temperature+dB:Treatment", 
-                   "~Trial+dB*Treatment","~Temperature+dB*Treatment")
-    }else if (nCov == 5){
-        names <- c("~Trial+Temperature+dB*Treatment")
+    } else if (nCov == 4) {
+        frm_names <- c("~Trial+Temperature+Diel+dB", "~Trial+Temperature+Diel+Treatment",
+                   "~Trial+Temperature+dB+Treatment", "~Trial+Temperature+dB:Treatment",
+                   "~Trial+dB*Treatment", "~Temperature+Diel+dB+Treatment",
+                   "~Temperature+Diel+dB:Treatment", "~Temperature+dB*Treatment",
+                   "~Diel+dB*Treatment")
+    } else if (nCov == 5) {
+        frm_names <- c("~Trial+Temperature+Diel+dB+Treatment", "~Trial+Temperature+Diel+dB:Treatment",
+                       "~Trial+Temperature+dB*Treatment", "~Temperature+Diel+dB*Treatment")
+    } else if (nCov == 6) {
+        frm_names <- c("~Trial+Temperature+Diel+dB*Treatment")
     }
     
-    form_list <- list()
+    # define a list to hold the formulas
+    frm_list <- list()
     
-    for (i in 1:length(names)){
-        form_list[[names[i]]] <- formula(paste(names[i], collapse=""))
+    # yield a list of formulas indexed by the character string
+    if (include_diel) {
+        for (i in 1:length(frm_names)) {
+            frm_list[[frm_names[i]]] <- formula(paste(frm_names[i], collapse=""))
+        }
+    } else {
+        no_diel_names <- frm_names[!grepl("Diel", frm_names)]
+        for (i in 1:length(no_diel_names)) {
+            frm_list[[no_diel_names[i]]] <- formula(paste(no_diel_names[i], collapse=""))
+        }
     }
 
-    form_list
+    frm_list
 }
 
 
