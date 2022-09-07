@@ -115,33 +115,26 @@ get_formulas <- function(nCov){
     # it would be helpful to expand this function to allow for covariate name inputs, and an
     # n-choose-k functionality to return all possible formulas with nCov covariates.
     
-    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))){
-        stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
+    if (!(nCov %in% c(0, 1, 2, 3, 4, 5))){
+        stop("nCov must be 0, 1, 2, 3, 4, or 5.")
     }
     
     if (nCov == 0){
         names <- c("~1")
     }else if (nCov == 1){
-        names <- c("~Trial", "~Pond", "~Temperature", "~dB", "~Treatment")
+        names <- c("~Trial", "~Temperature", "~dB", "~Treatment")
     }else if (nCov == 2){
-        names <- c("~Trial+Pond", "~Trial+Temperature", "~Trial+dB", "~Trial+Treatment", "~Pond+Temperature", 
-                   "~Pond+dB", "~Pond+Treatment", "~Temperature+dB", "~Temperature+Treatment", "~dB+Treatment",
-                   "~dB:Treatment")
+        names <- c("~Trial+Temperature", "~Trial+dB", "~Trial+Treatment", "~Temperature+dB", 
+                   "~Temperature+Treatment", "~dB+Treatment", "~dB:Treatment")
     }else if (nCov == 3){
-        names <- c("~Trial+Pond+Temperature", "~Trial+Pond+dB", "~Trial+Pond+Treatment", 
-                   "~Trial+Temperature+dB", "~Trial+Temperature+Treatment", "~Trial+dB+Treatment", "~Trial+dB:Treatment", 
-                   "~Pond+Temperature+dB", "~Pond+Temperature+Treatment", "~Pond+dB+Treatment", "~Pond+dB:Treatment",
-                   "~Temperature+dB+Treatment", "~Temperature+dB:Treatment", "~dB*Treatment")
+        names <- c("~Trial+Temperature+dB", "~Trial+Temperature+Treatment", "~Trial+dB+Treatment", 
+                   "~Trial+dB:Treatment", "~Temperature+dB+Treatment", "~Temperature+dB:Treatment", 
+                   "~dB*Treatment")
     }else if (nCov == 4){
-        names <- c("~Trial+Pond+Temperature+dB", "~Trial+Pond+Temperature+Treatment", 
-                   "~Trial+Pond+dB+Treatment", "~Trial+Pond+dB:Treatment", "~Trial+Temperature+dB+Treatment",
-                   "~Trial+Temperature+dB:Treatment", "~Pond+Temperature+dB+Treatment", "~Pond+Temperature+dB:Treatment",
-                   "~Trial+dB*Treatment", "~Pond+dB*Treatment", "~Temperature+dB*Treatment")
+        names <- c("~Trial+Temperature+dB+Treatment", "~Trial+Temperature+dB:Treatment", 
+                   "~Trial+dB*Treatment","~Temperature+dB*Treatment")
     }else if (nCov == 5){
-        names <- c("~Trial+Pond+Temperature+dB+Treatment", "~Trial+Pond+Temperature+dB:Treatment",
-                   "~Trial+Pond+dB*Treatment", "~Trial+Temperature+dB*Treatment", "~Pond+Temperature+dB*Treatment")
-    }else if (nCov == 6){
-        names <- c("~Trial+Pond+Temperature+dB*Treatment")
+        names <- c("~Trial+Temperature+dB*Treatment")
     }
     
     form_list <- list()
