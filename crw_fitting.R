@@ -104,11 +104,16 @@ add_intensity <- function(.data,
                                           "RMS.SPL..dB.re.1uPa."),
                           convert_to_utm = TRUE,
                           crs_string = "+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m") {
-    # this function performs autokriging on sound intensity data, predicts dB levels at the 
+    # This function performs autokriging on sound intensity data, predicts dB levels at the 
     # appropriate coordinates in .data, and outputs .data with a a column of those dB values.
-    # ".data" should be the output (or subset thereof) of the fit.crw function, and the files in
-    # db_data_path should be .cvs files with columns "x", "y", and "dB", with names like
-    # PondXXTreatment, i.e., Pond27ChirpSquare.
+    # ".data" should be the output (or subset thereof) of the fit.crw function, piped through 
+    # add_sound and add_treatment. 
+    
+    # The argument sound_samples_path should point to a single CSV file with pond, location, 
+    #treatment type, and dB levels. 
+    
+    # The argument input_names should be a 5-element vector with pond, x, y, treatment type, and dB
+    # column names (in that exact order) from the dataframe at sound_samples_path.
     
     # create column and load the sound samples
     .data$dB <- 0 
