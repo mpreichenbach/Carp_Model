@@ -96,6 +96,7 @@ add_diel <- function(.data,
 
 add_intensity <- function(.data, 
                           sound_samples_path,
+                          silent_treatments = c("Control", "Silence"),
                           input_names = c("Pond",
                                           "Long", 
                                           "Lat", 
@@ -115,9 +116,8 @@ add_intensity <- function(.data,
     df_sound[df_sound == "*"] <- NA
     df_sound <- drop_na(df_sound)
     
-    trials <- unique(.data$Trial)
-    ponds <- unique(.data$Pond)
-    treatments <- unique(.data$Treatment)
+    ponds <- as.numeric(unique(.data$Pond))
+    treatments <- setdiff(unique(.data$Treatment), silent_treatments)
     
     # convert coordinates if necessary
     if (convert_to_utm) {
@@ -126,39 +126,40 @@ add_intensity <- function(.data,
     }
     
     # rename various columns
+    colnames(df_sound)[which(colnames(df_sound) == input_names[1])] <- "Pond"
     colnames(df_sound)[which(colnames(df_sound) == input_names[2])] <- "x"
     colnames(df_sound)[which(colnames(df_sound) == input_names[3])] <- "y"
+    colnames(df_sound)[which(colnames(df_sound) == input_names[4])] <- "Treatment"
     colnames(df_sound)[which(colnames(df_sound) == input_names[5])] <- "dB"
     
     # loop through trials/ponds and update new column with kriging predictions
     for (pond in ponds) {
+        
+        # define the minimum intensity for "Silence" and "Control" treatments
+        min_intensity <- min(df_sound[df_sound$Pond == pond, "dB"])
+        .data[.data$Pond == pond & .data$Treatment %in% silent_treatments, "dB"] <- min_intensity
+        
         for (tmnt in treatments) {
-            # define telemetry sub-setting condition
-            tel_off_bool <- .data$Sound == "off" & .data$Pond == pond & .data$Treatment == tmnt
-            tel_on_bool <- .data$Sound == "on" & .data$Pond == pond & .data$Treatment == tmnt
-            
-            # define sound sub-setting condition
-            sound_subset_bool <- df_sound[[input_names[1]]] == pond & 
-                df_sound[[input_names[4]]] == tmnt
-            
             # get only the relevant data for this iteration
-            tel_sub <- .data[tel_on_bool, ]
-            sound_sub <- df_sound[sound_subset_bool,]
-            min_intensity <- min(df_sound[[input_names[5]]])
-            
+            tel_tmnt_bool <- .data$Pond == pond & .data$Treatment == tmnt
+            tel_sub <- .data[tel_tmnt_bool, ]
+            sound_sub <- df_sound[df_sound$Pond == pond & df_sound$Treatment == tmnt, ]
+
             if (nrow(tel_sub) == 0){
                 print(paste0("Treatment ", tmnt, ", Pond ", pond, " has no data."))
                 next
             }
             
-            # for sound-off times, set dB to minimum recorded value
-            .data[tel_off_bool, "dB"] <- min_intensity
-            
             # fit kriging model and update the sound-on dB values
-            .data[tel_on_bool, "dB"] <- fit_krig(sound_sub,
+            .data[tel_tmnt_bool, "dB"] <- fit_krig(sound_sub,
                                                    pred_data = tel_sub[, c("x", "y")],
                                                    crs_string = crs_string)$dB
         }
+    }
+    
+    # no outputted dB values should be 0
+    if (min(.data$dB == 0)) {
+        stop("The minimum dB value of the dataset is 0, but this should not be the case.")
     }
     
     .data
@@ -197,7 +198,7 @@ add_temperature <- function(.data,
     # minutes) and low variation, this performs linear interpolation. However, this may not be a 
     # good model for less frequent measurements (where a sinusoidal model may be better).
     
-    temperature_data <- read.csv(temperature_data_path)
+    temperature_data <- read.csv(temperature_path)
     temperature_data[[input_colnames[1]]] <- as.POSIXct(temperature_data[[input_colnames[1]]],
                                                         tz=timezone)
     temperature_data <- temperature_data[order(temperature_data[[input_colnames[1]]]),]
