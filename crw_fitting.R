@@ -188,7 +188,7 @@ add_sound <- function(.data,
 
 
 add_temperature <- function(.data,
-                            temperature_data_path,
+                            temperature_path,
                             input_colnames=c("DateTime", "Temp_C"),
                             timezone="America/Chicago",
                             trials=1:5,

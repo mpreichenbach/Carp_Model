@@ -482,7 +482,7 @@ treatment_key <- function(trial, pond){
         if (pond == 31) {
             treatment <- "Saw"
         } else if (pond == 30) {
-            treatment <- 'BoatMotor'
+            treatment <- '100Hp'
         } else if (pond == 27) {
             treatment <- 'Square'
         } else if (pond == 26) {
@@ -495,7 +495,7 @@ treatment_key <- function(trial, pond){
         } else if (pond == 30) {
             treatment <- "Saw"
         } else if (pond == 27) {
-            treatment <- "BoatMotor"
+            treatment <- "100Hp"
         } else if (pond == 26) {
             treatment <- 'Square'
         }
@@ -508,12 +508,12 @@ treatment_key <- function(trial, pond){
         } else if (pond == 27) {
             treatment <- "Saw"
         } else if (pond == 26) {
-            treatment <- "BoatMotor"
+            treatment <- "100Hp"
         }
     }
     if (trial == 4) {
         if (pond == 31) {
-            treatment <- "BoatMotor"
+            treatment <- "100Hp"
         } else if (pond == 30) {
             treatment <- 'Square'
         } else if (pond == 27) {
@@ -528,7 +528,7 @@ treatment_key <- function(trial, pond){
         } else if (pond == 30) {
             treatment <- "Saw"
         } else if (pond == 27) {
-            treatment <- "BoatMotor"
+            treatment <- "100Hp"
         } else if (pond == 26) {
             treatment <- "Control"
         }
