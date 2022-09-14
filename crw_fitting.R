@@ -176,19 +176,30 @@ add_sound <- function(.data,
     
     # adds a column to indicate before/after the sound plays
     
-    rep_number <- unique(.data$Repetition)
-    if (length(rep_number) != 1) {stop("Number of repetitions in the data must equal 1.")}
+    # initialize the column
+    .data$Sound <- values[2]
     
+    # get the repetition numbers
+    rep_numbers <- unique(.data$Repetition)
+
     # load the sound sample data
     df_sound <- sound_data()
     
-    # extract the relevant time
-    on_time <- unique(as_hms(df_sound[df_sound$Repetition == rep_number, "Time"]))
+    # extract the relevant times
+    on_times <- unique(as_hms(df_sound[df_sound$Repetition %in% rep_numbers, "Time"]))
+    
+    # create a list associating rep_numbers and on_times
+    rep_times_list <- list()
+    for (i in 1:length(rep_numbers)) {
+        rep_times_list[[rep_numbers[i]]] <- on_times[i]
+    }
     
     # assign the on/off values
-    .data$Sound <- values[2]
-    .data[as_hms(.data$Time) >= on_time, "Sound"] <- values[1]
-    
+    for (rep in rep_numbers) {
+        on_time <- on_times[rep]
+        .data[(as_hms(.data$Time) >= on_time) & (.data$Repetition == rep), "Sound"] <- values[1]
+    }
+
     .data
 }
 
