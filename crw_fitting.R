@@ -290,11 +290,6 @@ concatenate_tracks <- function(df_before, df_after) {
         before_sub <- df_before[df_before$ID == id, ]
         after_sub <- df_after[df_after$ID == id, ]
         
-        # move on to the next ID if it's not in df_after
-        if (nrow(after_sub == 0)) {
-            next
-        }
-        
         # make sure everything is in chronological order
         before_sub <- before_sub[order(before_sub$Time), ]
         after_sub <- after_sub[order(after_sub$Time), ]
@@ -302,6 +297,11 @@ concatenate_tracks <- function(df_before, df_after) {
         # get the starting and ending positions
         before_sub_drop_na <- drop_na(before_sub)
         after_sub_drop_na <- drop_na(after_sub)
+        
+        # move on to the next ID if ithere are no records
+        if (nrow(after_sub_drop_na) == 0) {
+            next
+        }
         
         x_ending <- before_sub_drop_na[nrow(before_sub_drop_na), "Easting"]
         y_ending <- before_sub_drop_na[nrow(before_sub_drop_na), "Northing"]
@@ -315,33 +315,7 @@ concatenate_tracks <- function(df_before, df_after) {
         
         # row-bind the repositioned track onto the before-data frame
         df_before0 <- rbind(df_before0, after_sub)
-        
-        print(paste0("ID ", id, " repositioning complete."))
-    }
+        }
     
     df_before0
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
