@@ -488,7 +488,7 @@ treatment_key <- function(trial, pond){
         } else if (pond == 26) {
             treatment <- "Control"
         }
-    } XQRZBJ
+    } 
     if (trial == 2) {
         if (pond == 31) {
             treatment <- "Control"
