@@ -58,7 +58,7 @@ predict_crw <- function(.data,
         })
         
         # append CRWs to a list of batches, and an error to a list of errors
-        if ("data.frame" %in% class(crw_attempt)){
+        if ("crwData" %in% class(crw_attempt)){
             batch_predictions <- prepData(crw_attempt)
         } else {
             error_list <- append(error_list, crw_attempt)
@@ -74,7 +74,7 @@ predict_crw <- function(.data,
         batch_counter <- batch_counter + id_batch_size
     }
     
-    return(predictions)
+    predictions    
 }
 
 
