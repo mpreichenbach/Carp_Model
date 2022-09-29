@@ -13,7 +13,7 @@ predict_crw <- function(.data,
                         telCovs=c("Trial", "Pond", "Repetition"),
                         timestep="6 sec",
                         id_batch_size=10,
-                        inits=c(2, 0.001),  
+                        inits=c(1, 0.01),  
                         retry_fits=100, 
                         attempts=100, 
                         doParallel = TRUE) {
@@ -36,22 +36,33 @@ predict_crw <- function(.data,
     predictions <- data.frame(matrix(nrow=0, ncol=ncol(tel) + 2))
     colnames(predictions) <- colnames(tel)
     
+    # since all batches may not fit, this object will 
+    error_list <- list()
+    
     while (batch_counter < length(ids)){
         batch_ids <- ids[(1 + batch_counter):(id_batch_size + batch_counter)]
         batch_tel <- tel[tel[[crw_colnames[1]]] %in% batch_ids,]
         
-        batch_crw <- crawlWrap(obsData=batch_tel, 
-                               timeStep=timestep,
-                               theta=inits,
-                               fixPar=c(NA, NA),
-                               Time.name = crw_colnames[2],
-                               retryFits = retry_fits,
-                               attempts=attempts,
-                               doParallel = doParallel,
-                               ncores = min(id_batch_size, ceiling(0.75 * detectCores()))
-                               )
+        # with the try() function, this will output either a CRW or an error message
+        crw_attempt <- try({
+            batch_crw <- crawlWrap(obsData=batch_tel, 
+                                   timeStep=timestep,
+                                   theta=inits,
+                                   fixPar=c(NA, NA),
+                                   Time.name = crw_colnames[2],
+                                   retryFits = retry_fits,
+                                   attempts=attempts,
+                                   doParallel = doParallel,
+                                   ncores = min(id_batch_size, ceiling(0.75 * detectCores())))
+            
+        })
         
-        batch_predictions <- prepData(batch_crw)
+        # append CRWs to a list of batches, and an error to a list of errors
+        if ("data.frame" %in% class(crw_attempt)){
+            batch_predictions <- prepData(crw_attempt)
+        } else {
+            error_list <- append(error_list, crw_attempt)
+        }
 
         # extract the covariates from telemetry to merge with crw predictions
         covData <- .data[.data$ID %in% batch_ids, c(crw_colnames[1:2], telCovs)]
