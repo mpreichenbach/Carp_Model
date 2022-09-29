@@ -12,7 +12,7 @@ predict_crw <- function(.data,
                         crw_colnames=c("ID", "Time", "x", "y"),
                         telCovs=c("Trial", "Pond", "Repetition"),
                         timestep="6 sec",
-                        id_batch_size=10,
+                        id_batch_size=12,
                         inits=c(1, 0.01),  
                         retry_fits=100, 
                         attempts=100, 
@@ -308,9 +308,9 @@ concatenate_tracks <- function(df_before, df_after) {
     # this function concatenates the tracks in the before/after dataframes.
     
     df_before0 <- df_before
-    before_ids <- unique(df_before$ID)
+    common_ids <- intersect(drop_na(df_before)$ID, drop_na(df_after)$ID)
     
-    for (id in before_ids) {
+    for (id in common_ids) {
         before_sub <- df_before[df_before$ID == id, ]
         after_sub <- df_after[df_after$ID == id, ]
         
@@ -322,7 +322,7 @@ concatenate_tracks <- function(df_before, df_after) {
         before_sub_drop_na <- drop_na(before_sub)
         after_sub_drop_na <- drop_na(after_sub)
         
-        # move on to the next ID if ithere are no records
+        # move on to the next ID if there are no records
         if (nrow(after_sub_drop_na) == 0) {
             next
         }
