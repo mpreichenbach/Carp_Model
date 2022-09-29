@@ -74,7 +74,9 @@ predict_crw <- function(.data,
         batch_counter <- batch_counter + id_batch_size
     }
     
-    predictions    
+    out_list = list("pred"=predictions, "err"=error_list)
+    
+    return(out_list)    
 }
 
 
@@ -101,7 +103,7 @@ add_diel <- function(.data,
         .data[sunRise < .data[,time_name] & .data[, time_name] < sunSet, "Diel"] <- day_night_values[1]
     }
     
-    .data
+    return(.data)
 }
 
 
@@ -178,7 +180,7 @@ add_intensity <- function(.data,
         stop("The minimum dB value of the dataset is 0, but this should not be the case.")
     }
     
-    .data
+    return(.data)
 }
 
 
@@ -211,7 +213,7 @@ add_sound <- function(.data,
         .data[(as_hms(.data$Time) >= on_time) & (.data$Repetition == rep), "Sound"] <- values[1]
     }
 
-    .data
+    return(.data)
 }
 
 
@@ -275,7 +277,7 @@ add_temperature <- function(.data,
     
     if (any(is.na(.data$Temperature))){stop("There are still NA's in the temperature column.")}
     
-    .data
+    return(.data)
 }
 
 
@@ -298,7 +300,7 @@ add_treatment <- function(.data) {
     
     .data$Treatment <- as.factor(.data$Treatment)
     
-    .data
+    return(.data)
 }
 
 
@@ -339,5 +341,5 @@ concatenate_tracks <- function(df_before, df_after) {
         df_before0 <- rbind(df_before0, after_sub)
         }
     
-    df_before0
+    return(df_before0)
 }
