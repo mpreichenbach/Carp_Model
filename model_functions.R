@@ -114,10 +114,6 @@ get_formulas <- function(nCov,
         stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
     }
     
-    if ((nCov == 6) & include_diel==FALSE) {
-        stop("For nCov == 6 to be valid, include_diel must be TRUE.")
-    }
-    
     # yield a character vector of formulas with nCov covariates, including "Diel"
     if (nCov == 0) {
         frm_names <- c("~1")
@@ -156,8 +152,8 @@ get_formulas <- function(nCov,
     # define a list to hold the formulas as formulas
     frm_list <- list()
     
-    for (i in 1:length(fm)) {
-        frm_list[[frm_names[i]]] <- formula(paste(frm_names[i],))
+    for (i in 1:length(frm_names)) {
+        frm_list[[frm_names[i]]] <- formula(paste(frm_names[i], collapse=""))
     }
     
     frm_list
