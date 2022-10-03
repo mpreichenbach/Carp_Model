@@ -111,7 +111,8 @@ fit_model_list <- function(list_element) {
 hmm_parallel_fit <- function(data,
                           step_max = 30,
                           cluster_size = 10,
-                          n_covs = c(0, 1, 2, 3, 4, 5, 6)){
+                          n_covs = c(0, 1, 2, 3, 4, 5, 6),
+                          ignore_covs = c("Diel", "dB")){
     # fits an HMM for many models at once, using the parallel::parLapplyLB() function
     
     # create a list to hold the lists of fitted model, indexed by n_covs
@@ -122,7 +123,8 @@ hmm_parallel_fit <- function(data,
     data <- data[! data$ID %in% bad_ids, ]
     
     for (n_cov in n_covs) {
-        formulas <- get_formulas(n_cov)
+        formulas <- get_formulas(n_cov,
+                                 ignore_covs=ignore_covs)
         
         # generates a list of formula/data pairs to input to fit_model_list
         frm_list <- list()

@@ -209,7 +209,7 @@ add_sound <- function(.data,
     
     # assign the on/off values
     for (rep in rep_numbers) {
-        on_time <- on_times[rep]
+        on_time <- rep_times_list[[rep]]
         .data[(as_hms(.data$Time) >= on_time) & (.data$Repetition == rep), "Sound"] <- values[1]
     }
 
