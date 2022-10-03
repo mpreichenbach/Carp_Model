@@ -105,7 +105,7 @@ correct_tags <- function(trial, pond){
 
 
 get_formulas <- function(nCov, 
-                         include_diel=FALSE) {
+                         ignore_covs=c("Diel")) {
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
     # "Trial", "Temperature", "dB", "Treatment". Additionally, we allow the option of includeing
     # "Diel" (aka, day/night) as a covariate.
@@ -148,21 +148,18 @@ get_formulas <- function(nCov,
         frm_names <- c("~Trial+Temperature+Diel+dB*Treatment")
     }
     
-    # define a list to hold the formulas
+    # sequentially remove covariates from the ignore_covs vector
+    for (cvrt in ignore_covs) {
+        frm_names <- frm_names[!grepl(cvrt, frm_names)]
+    }
+    
+    # define a list to hold the formulas as formulas
     frm_list <- list()
     
-    # yield a list of formulas indexed by the character string
-    if (include_diel) {
-        for (i in 1:length(frm_names)) {
-            frm_list[[frm_names[i]]] <- formula(paste(frm_names[i], collapse=""))
-        }
-    } else {
-        no_diel_names <- frm_names[!grepl("Diel", frm_names)]
-        for (i in 1:length(no_diel_names)) {
-            frm_list[[no_diel_names[i]]] <- formula(paste(no_diel_names[i], collapse=""))
-        }
+    for (i in 1:length(fm)) {
+        frm_list[[frm_names[i]]] <- formula(paste(frm_names[i],))
     }
-
+    
     frm_list
 }
 
