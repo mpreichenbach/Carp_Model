@@ -126,6 +126,11 @@ hmm_parallel_fit <- function(data,
         formulas <- get_formulas(n_cov,
                                  ignore_covs=ignore_covs)
         
+        # return the models if there are no more formulas to fit
+        if (length(formulas) == 0) {
+            return(model_holder)
+        }
+        
         # generates a list of formula/data pairs to input to fit_model_list
         frm_list <- list()
         for (frm in formulas) {
@@ -144,7 +149,7 @@ hmm_parallel_fit <- function(data,
         toc = Sys.time()
         
         print(paste0("Fitting models with ", n_cov, " covariates is complete;"))
-        print(paste0(toc - tic))
+        print(paste0(round(toc - tic), " minutes elapsed."))
         
         model_holder[[as.character(n_cov)]] <- hmm
         stopCluster(cl)

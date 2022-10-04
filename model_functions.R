@@ -152,8 +152,12 @@ get_formulas <- function(nCov,
     # define a list to hold the formulas as formulas
     frm_list <- list()
     
-    for (i in 1:length(frm_names)) {
-        frm_list[[frm_names[i]]] <- formula(paste(frm_names[i], collapse=""))
+    if (length(frm_names) == 0) {
+        return(frm_list)
+    } else {
+        for (i in 1:length(frm_names)) {
+            frm_list[[frm_names[i]]] <- formula(paste(frm_names[i], collapse=""))
+        }
     }
     
     frm_list
