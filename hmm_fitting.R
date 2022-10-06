@@ -149,7 +149,7 @@ hmm_parallel_fit <- function(data,
         toc = Sys.time()
         
         print(paste0("Fitting models with ", n_cov, " covariates is complete;"))
-        print(paste0(round(toc - tic), " minutes elapsed."))
+        print(toc - tic)
         
         model_holder[[as.character(n_cov)]] <- hmm
         stopCluster(cl)

@@ -108,7 +108,7 @@ add_diel <- function(.data,
 
 
 add_intensity <- function(.data, 
-                          sound_samples_path,
+                          sound_samples_path="C:/Users/RDGRLMPR/r_dev/Carp-Model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
                           silent_treatments = c("Control", "Silence"),
                           input_names = c("Pond",
                                           "Long", 
@@ -218,7 +218,7 @@ add_sound <- function(.data,
 
 
 add_temperature <- function(.data,
-                            temperature_path,
+                            temperature_path="C:/Users/RDGRLMPR/r_dev/Carp-Model/Supplementary Files/2018CERC_WaterTemperature_AllTrialsPonds.csv",
                             input_colnames=c("DateTime", "Temp_C"),
                             timezone="America/Chicago",
                             trials=1:5,
