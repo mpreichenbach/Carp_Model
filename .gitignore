@@ -1,13 +1,13 @@
-/.idea
-/Data
-/Fitted CRWs
-/Papers
-/Presentations
-/Processed Telemetry Data
-/Sound Mapping
-/Supplementary Files
-/Workspaces
-/Fitted HMMs
+/.idea/
+/Data/
+/Fitted CRWs/
+/Papers/
+/Presentations/
+/Processed Telemetry Data/
+/Sound Mapping/
+/Supplementary Files/
+/Workspaces/
+/Fitted HMMs/
 *.RData
 .Rproj.user
 .Rhistory

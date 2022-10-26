@@ -335,7 +335,10 @@ concatenate_tracks <- function(df_before, df_after, xycols=c("x", "y")) {
         
         # row-bind the repositioned track onto the before-data frame
         df_before0 <- rbind(df_before0, after_sub)
-        }
+    }
+    
+    # hmm-fitting assumes IDs are contiguous, so this groups them together
+    df_before0 <- df_before[order(df_before$ID, df_before$Time), ]
     
     return(df_before0)
 }
