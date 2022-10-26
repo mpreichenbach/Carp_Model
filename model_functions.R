@@ -105,10 +105,12 @@ correct_tags <- function(trial, pond){
 
 
 get_formulas <- function(nCov, 
+                         must_have_covs=NULL,
                          ignore_covs=c("Diel")) {
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
-    # "Trial", "Temperature", "dB", "Treatment". Additionally, we allow the option of includeing
-    # "Diel" (aka, day/night) as a covariate.
+    # "Trial", "Temperature", "dB", "Treatment". Additionally, we allow the option of including
+    # "Diel" (aka, day/night) as a covariate. The "must_have_covs" and "ignore_covs" arguments, if 
+    # they're lists longer than 1, are assumed to mean formulas must have all entries.
     
     if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))) {
         stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
@@ -144,7 +146,12 @@ get_formulas <- function(nCov,
         frm_names <- c("~Trial+Temperature+Diel+dB*Treatment")
     }
     
-    # sequentially remove covariates from the ignore_covs vector
+    # sequentially remove formulas which do not have the must_have_covs entries
+    for (cvrt in must_have_covs) {
+        frm_names <- frm_names[grep(cvrt, frm_names)]
+    }
+    
+    # sequentially remove covariates which have the ignore_covs entries
     for (cvrt in ignore_covs) {
         frm_names <- frm_names[!grepl(cvrt, frm_names)]
     }

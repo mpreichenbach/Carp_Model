@@ -113,6 +113,7 @@ hmm_parallel_fit <- function(data,
                           step_max = 30,
                           cluster_size = 10,
                           n_covs = c(0, 1, 2, 3, 4, 5, 6),
+                          must_have_covs = NULL,
                           ignore_covs = c("Diel", "dB")){
     # fits an HMM for many models at once, using the parallel::parLapplyLB() function
     
@@ -124,7 +125,7 @@ hmm_parallel_fit <- function(data,
     data <- data[! data$ID %in% bad_ids, ]
     
     for (n_cov in n_covs) {
-        formulas <- get_formulas(n_cov, ignore_covs=ignore_covs)
+        formulas <- get_formulas(n_cov, must_have_covs=must_have_covs, ignore_covs=ignore_covs)
         
         # return the models if there are no more formulas to fit
         if (length(formulas) == 0) {
