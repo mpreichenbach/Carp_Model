@@ -268,8 +268,8 @@ get_stationary_probs <- function(hmm,
     data <- hmm$data
 
     # remove the > 0 bit when we have more reasonable dB maps
-    min_num_cov <- min(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
-    max_num_cov <- max(data[data[[variable_num_cov]] > 0, num_cov], na.rm = TRUE)
+    min_num_cov <- min(data[data[[variable_num_cov]] > 0, variable_num_cov], na.rm = TRUE)
+    max_num_cov <- max(data[data[[variable_num_cov]] > 0, variable_num_cov], na.rm = TRUE)
 
     num_values <- seq(from = min_num_cov, to = max_num_cov, by = bin_width)
 

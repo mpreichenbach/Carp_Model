@@ -201,15 +201,8 @@ add_sound <- function(.data,
     # extract the relevant times
     on_times <- unique(as_hms(df_sound[df_sound$Repetition %in% rep_numbers, "Time"]))
     
-    # create a list associating rep_numbers and on_times
-    rep_times_list <- list()
-    for (i in 1:length(rep_numbers)) {
-        rep_times_list[[rep_numbers[i]]] <- on_times[i]
-    }
-    
-    # assign the on/off values
     for (rep in rep_numbers) {
-        on_time <- rep_times_list[[rep]]
+        on_time <- unique(as_hms(df_sound[df_sound$Repetition == rep, "Time"]))
         .data[(as_hms(.data$Time) >= on_time) & (.data$Repetition == rep), "Sound"] <- values[1]
     }
 
@@ -304,8 +297,11 @@ add_treatment <- function(.data) {
 }
 
 
-concatenate_tracks <- function(df_before, df_after) {
+concatenate_tracks <- function(df_before, df_after, xycols=c("x", "y")) {
     # this function concatenates the tracks in the before/after dataframes.
+    
+    x_name = xycols[1]
+    y_name = xycols[2]
     
     df_before0 <- df_before
     common_ids <- intersect(drop_na(df_before)$ID, drop_na(df_after)$ID)
@@ -327,15 +323,15 @@ concatenate_tracks <- function(df_before, df_after) {
             next
         }
         
-        x_ending <- before_sub_drop_na[nrow(before_sub_drop_na), "Easting"]
-        y_ending <- before_sub_drop_na[nrow(before_sub_drop_na), "Northing"]
+        x_ending <- before_sub_drop_na[nrow(before_sub_drop_na), x_name]
+        y_ending <- before_sub_drop_na[nrow(before_sub_drop_na), y_name]
         
-        x_starting <- after_sub_drop_na[nrow(after_sub_drop_na), "Easting"]
-        y_starting <- after_sub_drop_na[nrow(after_sub_drop_na), "Northing"]
+        x_starting <- after_sub_drop_na[nrow(after_sub_drop_na), x_name]
+        y_starting <- after_sub_drop_na[nrow(after_sub_drop_na), y_name]
         
         # update positions
-        after_sub$Easting <- after_sub$Easting - x_starting + x_ending
-        after_sub$Northing <- after_sub$Northing - y_starting + y_ending
+        after_sub[, x_name] <- after_sub[, x_name] - x_starting + x_ending
+        after_sub[, y_name] <- after_sub[, y_name] - y_starting + y_ending
         
         # row-bind the repositioned track onto the before-data frame
         df_before0 <- rbind(df_before0, after_sub)
