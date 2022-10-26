@@ -4,7 +4,7 @@ library(parallel)
 library(suncalc)
 library(stats)
 library(tidyverse)
-source('model_functions.R')
+source("Carp-Model/model_functions.R")
 
 
 predict_crw <- function(.data, 
