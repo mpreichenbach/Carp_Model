@@ -1,6 +1,6 @@
 library(momentuHMM)
 library(parallel)
-source("model_functions.R")
+source("Carp-Model/model_functions.R")
 
 fit_model <- function(.data, 
                       modelFormula,
