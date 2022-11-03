@@ -338,7 +338,7 @@ concatenate_tracks <- function(df_before, df_after, xycols=c("x", "y")) {
     }
     
     # hmm-fitting assumes IDs are contiguous, so this groups them together
-    df_before0 <- df_before[order(df_before$ID, df_before$Time), ]
+    df_before0 <- df_before0[order(df_before0$ID, df_before0$Time), ]
     
     return(df_before0)
 }
