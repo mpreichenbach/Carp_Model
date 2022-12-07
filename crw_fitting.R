@@ -168,10 +168,15 @@ add_intensity <- function(.data,
                 next
             }
             
-            # fit kriging model and update the sound-on dB values
-            .data[tel_tmnt_bool, "dB"] <- fit_krig(sound_sub,
-                                                   pred_data = tel_sub[, c("x", "y")],
-                                                   crs_string = crs_string)$dB
+            if (tmnt %in% c("Silence", "Control")){
+                # do some stuff
+            } else {
+                # fit kriging model and update the sound-on dB values
+                .data[tel_tmnt_bool, "dB"] <- fit_krig(sound_sub,
+                                                       pred_data = tel_sub[, c("x", "y")],
+                                                       crs_string = crs_string)$dB
+            }
+
         }
     }
     
