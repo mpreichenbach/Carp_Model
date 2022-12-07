@@ -168,8 +168,10 @@ add_intensity <- function(.data,
                 next
             }
             
-            if (tmnt %in% c("Silence", "Control")){
-                # do some stuff
+            if (tmnt %in% silent_treatments){
+                n <- length(tel_tmnt_bool)
+                # parameter values taken from "Diversity in ambient noise..." by Wysocki, et al.
+                .data[tel_tmnt_bool, "dB"] <- rnorm(n, mean = 98, sd = 1.18)
             } else {
                 # fit kriging model and update the sound-on dB values
                 .data[tel_tmnt_bool, "dB"] <- fit_krig(sound_sub,
