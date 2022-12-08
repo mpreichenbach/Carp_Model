@@ -29,9 +29,8 @@ convert_coords <- function(df,
 
 fit_krig <- function(sound_data, pred_data, 
                      crs_string="+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m"){
-    # this function performs an autoKriging on new_data, and extracts dataframe. Assumes labels of
-    # x, y, and dB.
-    
+    # this function performs an autoKriging on new_data. Assumes column labels are x, y, and dB.
+
     sf_sound <- st_as_sf(sound_data, coords = c("x", "y"), crs = CRS(crs_string))
     sp_pred_data <- SpatialPoints(as.data.frame(pred_data), proj4string = CRS(crs_string))
     
@@ -412,7 +411,7 @@ pond_locations <- function(path=file.path(getwd(), "Supplementary Files"),
 }
 
 
-sound_data <- function(path=file.path(getwd(), "Carp-Model/Supplementary Files"), 
+sound_data <- function(path=file.path(getwd(), "Supplementary Files"), 
                        round_str="30 min"){
     # loads the data frame with sound on/off times, pond, and sound type; also processes date/time
     # values to POSIXct format. Rounds values to nearest interval given in round_str; round_str=None

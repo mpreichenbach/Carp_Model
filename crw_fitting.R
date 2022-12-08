@@ -4,7 +4,7 @@ library(parallel)
 library(suncalc)
 library(stats)
 library(tidyverse)
-source("Carp-Model/model_functions.R")
+source("model_functions.R")
 
 
 predict_crw <- function(.data, 
@@ -108,7 +108,7 @@ add_diel <- function(.data,
 
 
 add_intensity <- function(.data, 
-                          sound_samples_path="C:/Users/RDGRLMPR/r_dev/Carp-Model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
+                          sound_samples_path="C:/Users/RDGRLMPR/r_dev/carp_model/Supplementary Files/Sound Mapping/Data_Master_PosUp_Compiled.csv",
                           silent_treatments = c("Control", "Silence"),
                           input_names = c("Pond",
                                           "Long", 
@@ -135,7 +135,7 @@ add_intensity <- function(.data,
     df_sound <- drop_na(df_sound)
     
     ponds <- as.numeric(unique(.data$Pond))
-    treatments <- setdiff(unique(.data$Treatment), silent_treatments)
+    treatments <- union(unique(.data$Treatment), silent_treatments)
     
     # convert coordinates if necessary
     if (convert_to_utm) {
@@ -169,7 +169,7 @@ add_intensity <- function(.data,
             }
             
             if (tmnt %in% silent_treatments){
-                n <- length(tel_tmnt_bool)
+                n <- nrow(tel_sub)
                 # parameter values taken from "Diversity in ambient noise..." by Wysocki, et al.
                 .data[tel_tmnt_bool, "dB"] <- rnorm(n, mean = 98, sd = 1.18)
             } else {
@@ -218,7 +218,7 @@ add_sound <- function(.data,
 
 
 add_temperature <- function(.data,
-                            temperature_path="C:/Users/RDGRLMPR/r_dev/Carp-Model/Supplementary Files/2018CERC_WaterTemperature_AllTrialsPonds.csv",
+                            temperature_path="C:/Users/RDGRLMPR/r_dev/carp_model/Supplementary Files/2018CERC_WaterTemperature_AllTrialsPonds.csv",
                             input_colnames=c("DateTime", "Temp_C"),
                             timezone="America/Chicago",
                             trials=1:5,
