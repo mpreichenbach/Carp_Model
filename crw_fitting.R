@@ -152,12 +152,10 @@ add_intensity <- function(.data,
     
     # loop through trials/ponds and update new column with kriging predictions
     for (pond in ponds) {
-        
-        # define the minimum intensity for "Silence" and "Control" treatments
-        min_intensity <- min(df_sound[df_sound$Pond == pond, "dB"])
-        .data[.data$Pond == pond & .data$Treatment %in% silent_treatments, "dB"] <- min_intensity
+        print(pond)
         
         for (tmnt in treatments) {
+            print(tmnt)
             # get only the relevant data for this iteration
             tel_tmnt_bool <- .data$Pond == pond & .data$Treatment == tmnt
             tel_sub <- .data[tel_tmnt_bool, ]
