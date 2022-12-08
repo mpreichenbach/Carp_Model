@@ -105,7 +105,7 @@ correct_tags <- function(trial, pond){
 
 get_formulas <- function(nCov, 
                          must_have_covs=NULL,
-                         ignore_covs=c("Diel")) {
+                         ignore_covs=NULL) {
     # outputs a list of formulas with the specified number of covariates; here we use the covariates
     # "Trial", "Temperature", "dB", "Treatment". Additionally, we allow the option of including
     # "Diel" (aka, day/night) as a covariate. The "must_have_covs" and "ignore_covs" arguments, if 

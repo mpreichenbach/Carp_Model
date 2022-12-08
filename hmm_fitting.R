@@ -1,6 +1,6 @@
 library(momentuHMM)
 library(parallel)
-source("Carp-Model/model_functions.R")
+source("model_functions.R")
 
 fit_model <- function(.data, 
                       modelFormula,
@@ -114,7 +114,7 @@ hmm_parallel_fit <- function(data,
                           cluster_size = 10,
                           n_covs = c(0, 1, 2, 3, 4, 5, 6),
                           must_have_covs = NULL,
-                          ignore_covs = c("Diel", "dB")){
+                          ignore_covs = NULL){
     # fits an HMM for many models at once, using the parallel::parLapplyLB() function
     
     # create a list to hold the lists of fitted model, indexed by n_covs
