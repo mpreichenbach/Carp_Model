@@ -111,8 +111,8 @@ get_formulas <- function(nCov,
     # "Diel" (aka, day/night) as a covariate. The "must_have_covs" and "ignore_covs" arguments, if 
     # they're lists longer than 1, are assumed to mean formulas must have all entries.
     
-    if (!(nCov %in% c(0, 1, 2, 3, 4, 5, 6))) {
-        stop("nCov must be 0, 1, 2, 3, 4, 5, or 6.")
+    if (!(nCov %in% c(0, 1, 2, 3, 4, 5))) {
+        stop("nCov must be 0, 1, 2, 3, 4, 5")
     }
     
     # yield a character vector of formulas with nCov covariates, including "Diel"
@@ -123,26 +123,18 @@ get_formulas <- function(nCov,
     } else if (nCov == 2) {
         frm_names <- c("~Trial+Temperature", "~Trial+Diel", "~Trial+dB", "~Trial+Treatment",
                    "~Temperature+Diel", "~Temperature+Diel", "~Temperature+dB", 
-                   "~Temperature+Treatment", "~Diel+dB", "~Diel+Treatment", "~dB+Treatment",
-                   "~dB:Treatment")
+                   "~Temperature+Treatment", "~Diel+dB", "~Diel+Treatment", "~dB+Treatment")
     } else if (nCov == 3) {
         frm_names <- c("~Trial+Temperature+Diel", "~Trial+Temperature+dB", 
                    "~Trial+Temperature+Treatment", "~Trial+Diel+dB", "~Trial+Diel+Treatment",
                    "~Trial+dB+Treatment", "~Trial+dB:Treatment", "~Temperature+Diel+dB",
-                   "~Temperature+Diel+Treatment", "~Temperature+dB+Treatment", 
-                   "~Temperature+dB:Treatment", "~Diel+dB+Treatment", "~Diel+dB:Treatment",
-                   "~dB*Treatment")
+                   "~Temperature+Diel+Treatment", "~Temperature+dB+Treatment", "~Diel+dB+Treatment")
     } else if (nCov == 4) {
         frm_names <- c("~Trial+Temperature+Diel+dB", "~Trial+Temperature+Diel+Treatment",
-                   "~Trial+Temperature+dB+Treatment", "~Trial+Temperature+dB:Treatment",
-                   "~Trial+dB*Treatment", "~Temperature+Diel+dB+Treatment",
-                   "~Temperature+Diel+dB:Treatment", "~Temperature+dB*Treatment",
-                   "~Diel+dB*Treatment")
+                   "~Trial+Temperature+dB+Treatment", "~Temperature+Diel+dB+Treatment",
+                   "~Temperature+Diel+dB:Treatment")
     } else if (nCov == 5) {
-        frm_names <- c("~Trial+Temperature+Diel+dB+Treatment", "~Trial+Temperature+Diel+dB:Treatment",
-                       "~Trial+Temperature+dB*Treatment", "~Temperature+Diel+dB*Treatment")
-    } else if (nCov == 6) {
-        frm_names <- c("~Trial+Temperature+Diel+dB*Treatment")
+        frm_names <- c("~Trial+Temperature+Diel+dB+Treatment")
     }
     
     # sequentially remove formulas which do not have the must_have_covs entries
