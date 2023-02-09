@@ -127,12 +127,11 @@ get_formulas <- function(nCov,
     } else if (nCov == 3) {
         frm_names <- c("~Trial+Temperature+Diel", "~Trial+Temperature+dB", 
                    "~Trial+Temperature+Treatment", "~Trial+Diel+dB", "~Trial+Diel+Treatment",
-                   "~Trial+dB+Treatment", "~Trial+dB:Treatment", "~Temperature+Diel+dB",
-                   "~Temperature+Diel+Treatment", "~Temperature+dB+Treatment", "~Diel+dB+Treatment")
+                   "~Trial+dB+Treatment", "~Temperature+Diel+dB", "~Temperature+Diel+Treatment", 
+                   "~Temperature+dB+Treatment", "~Diel+dB+Treatment")
     } else if (nCov == 4) {
         frm_names <- c("~Trial+Temperature+Diel+dB", "~Trial+Temperature+Diel+Treatment",
-                   "~Trial+Temperature+dB+Treatment", "~Temperature+Diel+dB+Treatment",
-                   "~Temperature+Diel+dB:Treatment")
+                   "~Trial+Temperature+dB+Treatment", "~Temperature+Diel+dB+Treatment")
     } else if (nCov == 5) {
         frm_names <- c("~Trial+Temperature+Diel+dB+Treatment")
     }
