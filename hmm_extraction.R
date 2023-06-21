@@ -59,7 +59,7 @@ compile_aic_scores <- function(path, verbose=FALSE){
 top_formulas <- function(model_lists, model_list_names=c("5min", "30min")){
     # takes the top formulas in different b/a time frames, and merges them by repetition. Allows for
     # comparison of which covariates are more effective in the long/short runs. For example, if
-    # model_lists=c(top_hmms_5min, top_hmms_30), this will output a dataframe with a column for each
+    # model_lists=list(top_hmms_5min, top_hmms_30), this will output a dataframe with a column for each
     # input list.
     
     # check whether the model_list entries have the name number of models
@@ -95,12 +95,12 @@ top_models <- function(aic_scores_path, fitted_hmm_path, reps=1:24, verbose=TRUE
     
     top_hmms = list()
     for (rep in reps){
-        aic_scores <- read.csv(paste0(aic_scores_path, "Repetition ", rep, ".csv"))
+        aic_scores <- read.csv(file.path(aic_scores_path, paste0("Repetition ", rep, ".csv")))
         top_model_info <- aic_scores[aic_scores$Rank == 1,]
         nCov <- top_model_info$nCov
         top_formula <- top_model_info$formula
-        fitted_models <- readRDS(paste0(fitted_hmm_path, "Repetition ", rep, "/", nCov, 
-                                        " covariates.RDS"))
+        fitted_models <- readRDS(file.path(fitted_hmm_path, paste0("Repetition ", rep, "/", nCov, 
+                                        " covariates.RDS")))
         n_models <- length(fitted_models)
         for (mod in 1:n_models){
             mod_formula <- format(fitted_models[[mod]]$conditions$formula)
@@ -118,7 +118,7 @@ get_param_estimates <- function(hmm,
                                num_cov = c("dB"),
                                n_bins = 100,
                                parms = c("step", "angle", "gamma"),
-                               factor_covs = c("Trial", "Pond", "Treatment"),
+                               factor_covs = c("Trial", "Treatment"),
                                state_names = c("exploratory", "encamped"),
                                verbose = TRUE){
     # plots the means of the fitted distributions for values in the parms arguments. It would be

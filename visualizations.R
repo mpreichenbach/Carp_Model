@@ -428,45 +428,30 @@ plot_transition_probs <- function(df,
 }
 
 
-
-# for (repn in 1:24) {
-#     hmm <- hmms30[[repn]]
-#     if (grepl("dB", format(hmm$conditions$formula))) {
-#         df0 <- readRDS(paste0("D:/Carp-Model/Parameter Estimates/30min/dB - Means/Repetition ", repn, ".rds"))
-#         rep_path <- paste0("D:/Carp-Model/Visualizations/30min BA/Means with CIs/Repetition ", repn)
-#         dir.create(rep_path)
-#         for (trial in 1:5) {
-#             for (pond in c(26, 27, 30, 31)) {
-#                 for (tmnt in c("Control", "BoatMotor", "ChirpSaw", "ChirpSquare")) {
-#                     df <- df0[df0$Trial == trial & df0$Pond == pond & df$Treatment == tmnt, ]
-#                     plot_title <- paste("Trial", trial, "Pond", pond, tmnt)
-#                     fname <- str_replace(plot_title, " ", "_")
-#                     plt <- plot_predicted_means(df, plot_title = plot_title)
-#                     ggsave(paste0(rep_path, fname, ".png"), plt, )
-#                 }
-#             }
-#         }
-#     }
-# }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plot_tracks <- function(df,
+                        state_names=c('Encamped', 'Exploratory'),
+                        colours=c('orange1', 'dodgerblue1')) {
+    
+    for (i in 1:length(state_names)) {
+        df[df$States == i, 'States'] <- state_names[i]
+    }
+    
+    plt <- ggplot(data=df, aes(x=x, y=y)) + 
+        geom_path(aes(colour=factor(States), group=grp), size=1.2) +
+        geom_point(aes(colour=factor(States)), size=3) +
+        scale_colour_manual(values=colours, name="") +
+        xlab('Easting') +
+        ylab('Northing') + 
+        theme_bw() + 
+        theme(
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            axis.title.x = element_text(size=16, margin=margin(b=0)),
+            axis.title.y = element_text(size=16, margin=margin(l=0)),
+            legend.position = c(0.8, 0.9),
+            legend.text = element_text(size=16)
+        )
+    
+    plt
+    
+}
