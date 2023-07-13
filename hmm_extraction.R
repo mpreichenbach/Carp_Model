@@ -293,14 +293,3 @@ get_stationary_probs <- function(hmm,
                                     )
     }
 }
-
-
-
-
-
-
-
-
-
-
-
