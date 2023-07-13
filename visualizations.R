@@ -93,7 +93,6 @@ plot_transition_probs <- function(df,
     quad_plot
 }
 
-
 plot_tracks <- function(df,
                         state_names=c('Exploratory', 'Encamped'),
                         colours=c('dodgerblue1', 'orange1')) {
